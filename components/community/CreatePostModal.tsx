@@ -182,7 +182,7 @@ export function CreatePostModal({
                 type="text"
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
-                placeholder="e.g. ⚔️ How I finished my first 14-day quest streak..."
+                placeholder="Post title..."
                 maxLength={120}
                 className="w-full px-3.5 py-2.5 bg-white border-2 border-slate-950 rounded-2xl text-sm font-bold text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-[#FF6B8B] shadow-[2px_2px_0px_0px_#020617]"
               />
@@ -294,7 +294,7 @@ export function CreatePostModal({
                   id="post-content-input"
                   value={content}
                   onChange={(e) => setContent(e.target.value)}
-                  placeholder="Draft your guild post in Markdown... You can use headings, lists, bold text, blockquotes, and code snippets."
+                  placeholder="Write your post content here (Markdown supported)..."
                   rows={7}
                   className="w-full px-3.5 py-2.5 bg-white border-2 border-slate-950 rounded-2xl text-xs sm:text-sm font-semibold text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-[#FF6B8B] shadow-[2px_2px_0px_0px_#020617] font-mono leading-relaxed"
                 />
@@ -304,7 +304,7 @@ export function CreatePostModal({
                     <MarkdownRenderer content={content} />
                   ) : (
                     <p className="text-xs font-bold text-slate-400 italic">
-                      Nothing to preview yet. Switch to "Write" to start crafting your post.
+                      No content to preview yet. Switch to "Write" to draft your post.
                     </p>
                   )}
                 </div>

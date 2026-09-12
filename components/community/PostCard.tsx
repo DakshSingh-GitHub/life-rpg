@@ -299,7 +299,7 @@ export function PostCard({
                   type="text"
                   value={newCommentText}
                   onChange={(e) => setNewCommentText(e.target.value)}
-                  placeholder="Join the discussion (Markdown supported)..."
+                  placeholder="Write a comment..."
                   className="flex-1 px-4 py-2 bg-[#FDF8EE] border-2 border-slate-950 rounded-2xl text-xs font-semibold text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-[#FF6B8B] shadow-[2px_2px_0px_0px_#020617]"
                 />
                 <button
@@ -316,15 +316,12 @@ export function PostCard({
             {/* Threaded Comments List */}
             {loadingComments ? (
               <div className="py-6 text-center text-xs font-bold text-slate-500">
-                Fetching guild communications...
+                Loading comments...
               </div>
             ) : comments.length === 0 ? (
               <div className="py-6 text-center bg-[#FDF8EE] border-2 border-dashed border-slate-300 rounded-2xl p-4">
                 <p className="font-display font-black text-xs text-slate-700">
-                  No replies in this thread yet.
-                </p>
-                <p className="text-[11px] font-bold text-slate-500 mt-0.5">
-                  Be the first adventurer to share insights or cheer on your comrade!
+                  No comments yet.
                 </p>
               </div>
             ) : (

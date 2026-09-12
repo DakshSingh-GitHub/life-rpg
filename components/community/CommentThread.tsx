@@ -145,7 +145,7 @@ export function CommentThread({
                 type="text"
                 value={replyContent}
                 onChange={(e) => setReplyContent(e.target.value)}
-                placeholder={`Replying to @${comment.author_username}...`}
+                placeholder="Write a reply..."
                 className="flex-1 px-3 py-1.5 bg-[#FDF8EE] border-2 border-slate-950 rounded-xl text-xs font-semibold text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-[#FF6B8B]"
                 autoFocus
               />

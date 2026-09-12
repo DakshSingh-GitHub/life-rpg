@@ -144,7 +144,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         };
         const { data: insertedProg } = await supabase
           .from("user_progression")
-          .upsert([initialProg])
+          .upsert([initialProg], { onConflict: "user_id" })
           .select()
           .single();
         progression = insertedProg || initialProg;
@@ -361,21 +361,24 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
 
       // 3. Explicitly persist progression to public.user_progression table in Supabase
-      const { error: progErr } = await supabase.from("user_progression").upsert({
-        user_id: userId,
-        level: 1,
-        current_xp: 0,
-        gold: 50,
-        streak_days: 1,
-        last_active_date: new Date().toISOString().split("T")[0],
-        brawn_xp: 0,
-        intellect_xp: 0,
-        swiftness_xp: 0,
-        vitality_xp: 0,
-        total_quests_completed: 0,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-      });
+      const { error: progErr } = await supabase.from("user_progression").upsert(
+        {
+          user_id: userId,
+          level: 1,
+          current_xp: 0,
+          gold: 50,
+          streak_days: 1,
+          last_active_date: new Date().toISOString().split("T")[0],
+          brawn_xp: 0,
+          intellect_xp: 0,
+          swiftness_xp: 0,
+          vitality_xp: 0,
+          total_quests_completed: 0,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        },
+        { onConflict: "user_id" }
+      );
       if (progErr) {
         console.error("Supabase progression insert error:", progErr);
       }

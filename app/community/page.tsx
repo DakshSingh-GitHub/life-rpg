@@ -356,9 +356,6 @@ export default function CommunityPage() {
                   <p className="text-xs font-display font-black text-slate-700">
                     No posts available
                   </p>
-                  <p className="text-[11px] font-bold text-slate-500 mt-1">
-                    You haven't published any posts yet.
-                  </p>
                 </div>
               ) : (
                 <div className="space-y-2.5">
@@ -534,13 +531,6 @@ export default function CommunityPage() {
                 <h3 className="font-display font-black text-lg text-slate-950">
                   No posts available
                 </h3>
-                <p className="text-xs font-bold text-slate-500 mt-1 max-w-sm mx-auto">
-                  {searchQuery || selectedTag !== "ALL"
-                    ? "Try adjusting your search terms or selecting 'All Tags'."
-                    : viewFilter === "my_posts"
-                    ? "You haven't authored any posts yet."
-                    : "There are currently no community posts available."}
-                </p>
                 <button
                   type="button"
                   onClick={() => setIsCreateModalOpen(true)}
