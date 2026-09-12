@@ -63,7 +63,7 @@ export default function CommunityPage() {
     }
   }, [user, loading, router]);
 
-  // Load Posts
+  // Load Posts (Strictly real Supabase data only)
   const loadPosts = async () => {
     try {
       setLoadingPosts(true);
@@ -354,10 +354,10 @@ export default function CommunityPage() {
               {myTopThreePosts.length === 0 ? (
                 <div className="p-4 bg-[#FDF8EE] border-2 border-dashed border-slate-300 rounded-2xl text-center">
                   <p className="text-xs font-display font-black text-slate-700">
-                    No dispatches penned yet
+                    No posts available
                   </p>
                   <p className="text-[11px] font-bold text-slate-500 mt-1">
-                    Click "Forge New Post" above to write your first log!
+                    You haven't published any posts yet.
                   </p>
                 </div>
               ) : (
@@ -532,14 +532,14 @@ export default function CommunityPage() {
               <div className="py-16 text-center bg-white border-3 border-slate-950 rounded-3xl p-8 shadow-[5px_5px_0px_0px_#020617]">
                 <div className="text-4xl mb-3">📭</div>
                 <h3 className="font-display font-black text-lg text-slate-950">
-                  No dispatches found
+                  No posts available
                 </h3>
                 <p className="text-xs font-bold text-slate-500 mt-1 max-w-sm mx-auto">
                   {searchQuery || selectedTag !== "ALL"
                     ? "Try adjusting your search terms or selecting 'All Tags'."
                     : viewFilter === "my_posts"
-                    ? "You haven't authored any dispatches yet. Forge your first post!"
-                    : "The guild board is quiet. Be the first adventurer to share!"}
+                    ? "You haven't authored any posts yet."
+                    : "There are currently no community posts available."}
                 </p>
                 <button
                   type="button"
