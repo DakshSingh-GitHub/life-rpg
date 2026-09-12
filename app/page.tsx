@@ -2,6 +2,7 @@
 
 import React, { useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/auth-context";
 import { motion, AnimatePresence } from "framer-motion";
@@ -165,8 +166,15 @@ export default function LandingPage() {
             aria-label="LifeRPG Home"
             className="flex items-center gap-2 group focus:outline-none focus:ring-2 focus:ring-[#FF6B8B] rounded-full p-0.5 sm:p-1"
           >
-            <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-[#FF6B8B] border-2 sm:border-3 border-slate-950 flex items-center justify-center shadow-[1.5px_1.5px_0px_0px_#020617] sm:shadow-[2px_2px_0px_0px_#020617] group-hover:rotate-6 transition-transform shrink-0">
-              <Sword className="w-4 h-4 sm:w-5 sm:h-5 text-white stroke-[2.5]" aria-hidden="true" />
+            <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-2xl bg-[#FF6B8B] border-2 sm:border-3 border-slate-950 flex items-center justify-center shadow-[1.5px_1.5px_0px_0px_#020617] sm:shadow-[2px_2px_0px_0px_#020617] group-hover:rotate-6 transition-transform shrink-0 overflow-hidden">
+              <Image
+                src="/icon-192.png"
+                alt="LifeRPG App Icon"
+                width={40}
+                height={40}
+                className="w-full h-full object-cover"
+                priority
+              />
             </div>
             <div className="flex flex-col">
               <div className="flex items-center gap-1.5 sm:gap-2">
@@ -1005,8 +1013,14 @@ export default function LandingPage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex flex-col md:flex-row items-center justify-between gap-6 mb-8">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-2xl bg-[#FF6B8B] border-3 border-slate-950 flex items-center justify-center shadow-[3px_3px_0px_0px_#020617]">
-                <Sword className="w-5 h-5 text-white stroke-[2.5]" />
+              <div className="w-10 h-10 rounded-2xl bg-[#FF6B8B] border-3 border-slate-950 flex items-center justify-center shadow-[3px_3px_0px_0px_#020617] overflow-hidden">
+                <Image
+                  src="/icon-192.png"
+                  alt="LifeRPG App Icon"
+                  width={40}
+                  height={40}
+                  className="w-full h-full object-cover"
+                />
               </div>
               <span className="font-display font-black text-2xl text-slate-950">
                 Life<span className="text-[#FF6B8B]">RPG</span>

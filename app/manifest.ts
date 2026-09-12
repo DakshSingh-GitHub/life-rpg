@@ -7,14 +7,40 @@ export default function manifest(): MetadataRoute.Manifest {
     description:
       "Transform real-world chores, fitness, and deep work into XP, loot, and character progression.",
     start_url: "/",
+    scope: "/",
     display: "standalone",
+    orientation: "portrait-primary",
     background_color: "#FDF8EE",
     theme_color: "#FF6B8B",
+    categories: ["productivity", "lifestyle", "games"],
     icons: [
       {
-        src: "/favicon.ico",
-        sizes: "any",
-        type: "image/x-icon",
+        src: "/icon-192.png",
+        sizes: "192x192",
+        type: "image/png",
+        purpose: "any",
+      },
+      {
+        src: "/icon-512.png",
+        sizes: "512x512",
+        type: "image/png",
+        purpose: "any",
+      },
+      {
+        src: "/icon-maskable.png",
+        sizes: "512x512",
+        type: "image/png",
+        purpose: "maskable",
+      },
+      {
+        src: "/apple-touch-icon.png",
+        sizes: "180x180",
+        type: "image/png",
+      },
+      {
+        src: "/favicon.png",
+        sizes: "64x64",
+        type: "image/png",
       },
     ],
   };
