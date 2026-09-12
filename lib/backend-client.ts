@@ -10,7 +10,11 @@ const getBaseUrl = (): string => {
   if (typeof window !== "undefined") {
     return "/api/backend";
   }
-  return process.env.NEXT_PUBLIC_BACKEND_URL || "http://127.0.0.1:8000/api";
+  let url = (process.env.NEXT_PUBLIC_BACKEND_URL || "http://127.0.0.1:8000/api").trim();
+  if (!url.startsWith("http://") && !url.startsWith("https://") && !url.startsWith("/")) {
+    url = `https://${url}`;
+  }
+  return url.replace(/\/+$/, "");
 };
 
 export interface BackendQuestCompleteResult {

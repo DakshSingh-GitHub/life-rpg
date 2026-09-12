@@ -3,11 +3,16 @@ import type { NextConfig } from "next";
 const nextConfig: NextConfig = {
   async rewrites() {
     // If an external backend URL is specified (e.g., custom domain or separate server)
-    if (process.env.NEXT_PUBLIC_BACKEND_URL) {
+    let backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL?.trim();
+    if (backendUrl) {
+      if (!backendUrl.startsWith("http://") && !backendUrl.startsWith("https://")) {
+        backendUrl = `https://${backendUrl}`;
+      }
+      backendUrl = backendUrl.replace(/\/+$/, "");
       return [
         {
           source: "/api/backend/:path*",
-          destination: `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/:path*`,
+          destination: `${backendUrl}/api/:path*`,
         },
       ];
     }
