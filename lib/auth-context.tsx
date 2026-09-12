@@ -14,6 +14,7 @@ import {
   resetRecurringQuestsForNewDay,
   STARTER_QUESTS,
 } from "./rpg-engine";
+import { completeQuestViaBackend, redeemShopViaBackend } from "./backend-client";
 
 export interface SignUpParams {
   email: string;
@@ -539,58 +540,91 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const supabase = createClient();
 
     if (willBeCompleted) {
-      xpEarned = quest.xp_reward;
-      goldEarned = quest.gold_reward;
+      // 1. Attempt authoritative completion via Python FastAPI Game Engine
+      const backendRes = await completeQuestViaBackend(questId, profile.id);
 
-      const result = processXpGain(profile, xpEarned, goldEarned, quest.attribute);
-      leveledUp = result.leveledUp;
-      newLevel = result.newLevel;
+      if (backendRes.data) {
+        const b = backendRes.data;
+        leveledUp = b.level_up;
+        newLevel = b.new_level;
+        xpEarned = b.xp_earned;
+        goldEarned = b.gold_earned;
 
-      setProfile(result.updatedProfile);
+        const updatedProfile: UserProfile = {
+          ...profile,
+          level: b.new_level,
+          current_xp: b.current_xp,
+          gold: b.new_gold,
+          streak_days: b.new_streak,
+          last_active_date: b.completed_at.slice(0, 10),
+          brawn_xp: b.attribute_xp.brawn,
+          intellect_xp: b.attribute_xp.intellect,
+          swiftness_xp: b.attribute_xp.swiftness,
+          vitality_xp: b.attribute_xp.vitality,
+        };
 
-      if (leveledUp) {
-        playQuestSound("levelup");
+        setProfile(updatedProfile);
+
+        if (leveledUp) {
+          playQuestSound("levelup");
+        } else {
+          playQuestSound("complete");
+        }
       } else {
-        playQuestSound("complete");
-      }
+        // Graceful client fallback if backend is unreachable
+        xpEarned = quest.xp_reward;
+        goldEarned = quest.gold_reward;
 
-      await supabase
-        .from("user_progression")
-        .update({
-          level: result.updatedProfile.level,
-          current_xp: result.updatedProfile.current_xp,
-          gold: result.updatedProfile.gold,
-          streak_days: result.updatedProfile.streak_days,
-          last_active_date: result.updatedProfile.last_active_date,
-          brawn_xp: result.updatedProfile.brawn_xp,
-          intellect_xp: result.updatedProfile.intellect_xp,
-          swiftness_xp: result.updatedProfile.swiftness_xp,
-          vitality_xp: result.updatedProfile.vitality_xp,
-          updated_at: new Date().toISOString(),
-        })
-        .eq("user_id", profile.id);
+        const result = processXpGain(profile, xpEarned, goldEarned, quest.attribute);
+        leveledUp = result.leveledUp;
+        newLevel = result.newLevel;
 
-      await supabase.from("quest_history").insert([
-        {
-          user_id: profile.id,
-          quest_id: questId,
-          quest_title: quest.title,
-          attribute: quest.attribute,
-          xp_earned: xpEarned,
-          gold_earned: goldEarned,
-        },
-      ]);
+        setProfile(result.updatedProfile);
 
-      if (result.streakIncremented) {
-        await supabase.from("streak_records").insert([
+        if (leveledUp) {
+          playQuestSound("levelup");
+        } else {
+          playQuestSound("complete");
+        }
+
+        await supabase
+          .from("user_progression")
+          .update({
+            level: result.updatedProfile.level,
+            current_xp: result.updatedProfile.current_xp,
+            gold: result.updatedProfile.gold,
+            streak_days: result.updatedProfile.streak_days,
+            last_active_date: result.updatedProfile.last_active_date,
+            brawn_xp: result.updatedProfile.brawn_xp,
+            intellect_xp: result.updatedProfile.intellect_xp,
+            swiftness_xp: result.updatedProfile.swiftness_xp,
+            vitality_xp: result.updatedProfile.vitality_xp,
+            updated_at: new Date().toISOString(),
+          })
+          .eq("user_id", profile.id);
+
+        await supabase.from("quest_history").insert([
           {
             user_id: profile.id,
-            streak_count: result.updatedProfile.streak_days,
-            activity_date: result.updatedProfile.last_active_date,
-            tasks_completed_count: 1,
-            action: "increment",
+            quest_id: questId,
+            quest_title: quest.title,
+            attribute: quest.attribute,
+            xp_earned: xpEarned,
+            gold_earned: goldEarned,
           },
         ]);
+
+        if (result.streakIncremented) {
+          await supabase.from("streak_records").insert([
+            {
+              user_id: profile.id,
+              streak_count: result.updatedProfile.streak_days,
+              activity_date: result.updatedProfile.last_active_date,
+              tasks_completed_count: 1,
+              action: "increment",
+            },
+          ]);
+        }
       }
     } else {
       playQuestSound("click");
@@ -689,13 +723,25 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return {};
   };
 
-  // Purchase Reward in Supabase
+  // Purchase Reward via Backend with Client Fallback
   const purchaseReward = async (reward: RewardItem): Promise<{ error?: string }> => {
     if (!profile) return { error: "Profile not loaded." };
     if (profile.gold < reward.cost) {
       return { error: "Not enough Gold! Complete more quests to earn Gold." };
     }
 
+    // 1. Attempt authoritative backend redemption
+    const backendRes = await redeemShopViaBackend(profile.id, reward.id, reward.title, reward.cost);
+
+    if (backendRes.data) {
+      const updatedGold = backendRes.data.remaining_gold;
+      setProfile({ ...profile, gold: updatedGold });
+      setUnlockedRewards((prev) => [...prev, reward.id]);
+      playQuestSound("levelup");
+      return {};
+    }
+
+    // 2. Client fallback if backend is unreachable
     const updatedGold = profile.gold - reward.cost;
     const updatedProfile = { ...profile, gold: updatedGold };
     setProfile(updatedProfile);

@@ -35,8 +35,14 @@ import {
   User,
   Users,
   Settings,
+  Wand2,
 } from "lucide-react";
 import { useAuth } from "@/lib/auth-context";
+import {
+  generateQuestlineViaAI,
+  enrollQuestlineViaBackend,
+  AIGeneratedQuestline,
+} from "@/lib/backend-client";
 import {
   getXpRequiredForLevel,
   getAttributeLevel,
@@ -106,6 +112,7 @@ export default function DashboardPage() {
     toggleQuestCompletion,
     deleteQuest,
     purchaseReward,
+    refreshData,
   } = useAuth();
 
   // Navigation tabs: 'quests' | 'shop'
@@ -116,6 +123,7 @@ export default function DashboardPage() {
 
   // New Quest Modal State
   const [modalOpen, setModalOpen] = useState(false);
+  const [modalMode, setModalMode] = useState<"manual" | "ai">("manual");
   const [newTitle, setNewTitle] = useState("");
   const [newCategory, setNewCategory] = useState<CategoryType>("fitness");
   const [newDifficulty, setNewDifficulty] = useState<DifficultyType>("medium");
@@ -123,6 +131,13 @@ export default function DashboardPage() {
   const [newIsPriority, setNewIsPriority] = useState(false);
   const [creating, setCreating] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
+
+  // AI Quest Generator State
+  const [aiGoal, setAiGoal] = useState("");
+  const [aiDuration, setAiDuration] = useState(5);
+  const [aiGenerating, setAiGenerating] = useState(false);
+  const [generatedQuestline, setGeneratedQuestline] = useState<AIGeneratedQuestline | null>(null);
+  const [enrollingAi, setEnrollingAi] = useState(false);
 
   // Level Up Toast
   const [levelUpInfo, setLevelUpInfo] = useState<{ open: boolean; level: number }>({
@@ -279,6 +294,47 @@ export default function DashboardPage() {
       setNewIsRecurring(false);
       setNewIsPriority(false);
       setModalOpen(false);
+    }
+  };
+
+  // Handle AI Questline Generation via FastAPI Backend
+  const handleGenerateAI = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!aiGoal.trim()) {
+      setFormError("Please enter a goal for the AI Dungeon Master!");
+      return;
+    }
+    setAiGenerating(true);
+    setFormError(null);
+    const res = await generateQuestlineViaAI(
+      aiGoal.trim(),
+      profile?.avatar_class || "warrior",
+      aiDuration,
+      30
+    );
+    setAiGenerating(false);
+    if (res.error) {
+      setFormError(res.error);
+    } else if (res.data) {
+      setGeneratedQuestline(res.data);
+    }
+  };
+
+  // Handle Enrolling AI Questline into User's Quest Log
+  const handleEnrollAI = async () => {
+    if (!generatedQuestline || !profile) return;
+    setEnrollingAi(true);
+    setFormError(null);
+    const res = await enrollQuestlineViaBackend(profile.id, generatedQuestline.quests);
+    setEnrollingAi(false);
+    if (!res.success) {
+      setFormError(res.error || "Failed to enroll quests");
+    } else {
+      await refreshData();
+      setModalOpen(false);
+      setGeneratedQuestline(null);
+      setAiGoal("");
+      setModalMode("manual");
     }
   };
 
@@ -1392,191 +1448,366 @@ export default function DashboardPage() {
                     <Plus className="w-4 h-4" />
                   </div>
                   <h3 className="font-display font-black text-xl text-slate-950">
-                    Forge New Quest
+                    {modalMode === "manual" ? "Forge New Quest" : "AI Dungeon Master"}
                   </h3>
                 </div>
                 <button
                   onClick={() => setModalOpen(false)}
-                  className="p-1 rounded-xl hover:bg-[#FDF8EE] border-2 border-transparent hover:border-slate-950 transition-all"
+                  className="p-1 rounded-xl hover:bg-[#FDF8EE] border-2 border-transparent hover:border-slate-950 transition-all cursor-pointer"
                 >
                   <X className="w-5 h-5" />
                 </button>
               </div>
 
+              {/* Mode Switcher: Manual vs AI Dungeon Master */}
+              <div className="flex bg-[#FDF8EE] p-1 rounded-2xl border-2 border-slate-950 mt-3.5 gap-1">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setModalMode("manual");
+                    setFormError(null);
+                  }}
+                  className={`flex-1 py-1.5 rounded-xl text-xs font-display font-black transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
+                    modalMode === "manual"
+                      ? "bg-white border-2 border-slate-950 shadow-[1px_1px_0px_0px_#020617] text-slate-950"
+                      : "text-slate-500 hover:text-slate-900 border-2 border-transparent"
+                  }`}
+                >
+                  <Plus className="w-3.5 h-3.5" />
+                  <span>Manual Quest</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setModalMode("ai");
+                    setFormError(null);
+                  }}
+                  className={`flex-1 py-1.5 rounded-xl text-xs font-display font-black transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
+                    modalMode === "ai"
+                      ? "bg-[#FFD166] border-2 border-slate-950 shadow-[1px_1px_0px_0px_#020617] text-slate-950"
+                      : "text-slate-500 hover:text-slate-900 border-2 border-transparent"
+                  }`}
+                >
+                  <Sparkles className="w-3.5 h-3.5 text-[#FF6B8B]" />
+                  <span>AI Quest Master</span>
+                </button>
+              </div>
+
               {formError && (
-                <div className="mt-4 p-3 bg-[#FFEAEF] border-2 border-[#FF6B8B] rounded-2xl flex items-center gap-2 text-xs font-bold text-[#b82143]">
+                <div className="mt-3 p-3 bg-[#FFEAEF] border-2 border-[#FF6B8B] rounded-2xl flex items-center gap-2 text-xs font-bold text-[#b82143]">
                   <AlertCircle className="w-4 h-4 shrink-0" />
                   <span>{formError}</span>
                 </div>
               )}
 
-              <form onSubmit={handleCreateQuest} className="mt-4 space-y-4">
-                {/* Title */}
-                <div>
-                  <label className="block text-xs font-display font-black text-slate-800 uppercase tracking-wider mb-1">
-                    Quest Description
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    value={newTitle}
-                    onChange={(e) => setNewTitle(e.target.value)}
-                    placeholder="e.g. Read 20 pages of clean architecture"
-                    className="w-full px-4 py-2.5 bg-[#FDF8EE] border-2 border-slate-950 rounded-2xl text-sm font-bold text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-[#FF6B8B]"
-                  />
-                </div>
+              {modalMode === "manual" ? (
+                <form onSubmit={handleCreateQuest} className="mt-4 space-y-4">
+                  {/* Title */}
+                  <div>
+                    <label className="block text-xs font-display font-black text-slate-800 uppercase tracking-wider mb-1">
+                      Quest Description
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      value={newTitle}
+                      onChange={(e) => setNewTitle(e.target.value)}
+                      placeholder="e.g. Read 20 pages of clean architecture"
+                      className="w-full px-4 py-2.5 bg-[#FDF8EE] border-2 border-slate-950 rounded-2xl text-sm font-bold text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-[#FF6B8B]"
+                    />
+                  </div>
 
-                {/* Attribute / Category */}
-                <div>
-                  <label className="block text-xs font-display font-black text-slate-800 uppercase tracking-wider mb-1">
-                    Character Attribute
-                  </label>
-                  <div className="grid grid-cols-2 gap-2">
-                    {(
-                      [
-                        { id: "fitness", label: "🥊 Brawn", sub: "Strength" },
-                        { id: "knowledge", label: "🧠 Intellect", sub: "Focus" },
-                        { id: "habits", label: "⚡ Swiftness", sub: "Discipline" },
-                        { id: "wellness", label: "🌿 Vitality", sub: "Recovery" },
-                      ] as const
-                    ).map((item) => (
+                  {/* Attribute / Category */}
+                  <div>
+                    <label className="block text-xs font-display font-black text-slate-800 uppercase tracking-wider mb-1">
+                      Character Attribute
+                    </label>
+                    <div className="grid grid-cols-2 gap-2">
+                      {(
+                        [
+                          { id: "fitness", label: "🥊 Brawn", sub: "Strength" },
+                          { id: "knowledge", label: "🧠 Intellect", sub: "Focus" },
+                          { id: "habits", label: "⚡ Swiftness", sub: "Discipline" },
+                          { id: "wellness", label: "🌿 Vitality", sub: "Recovery" },
+                        ] as const
+                      ).map((item) => (
+                        <button
+                          key={item.id}
+                          type="button"
+                          onClick={() => setNewCategory(item.id)}
+                          className={`p-2.5 rounded-xl border-2 text-left transition-all ${
+                            newCategory === item.id
+                              ? "bg-[#FEF3C7] border-slate-950 shadow-[2px_2px_0px_0px_#020617] translate-x-[1px] translate-y-[1px]"
+                              : "bg-white border-slate-200 hover:border-slate-400"
+                          }`}
+                        >
+                          <div className="font-display font-black text-xs text-slate-950">
+                            {item.label}
+                          </div>
+                          <div className="text-[10px] font-bold text-slate-400">
+                            {item.sub}
+                          </div>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Difficulty */}
+                  <div>
+                    <label className="block text-xs font-display font-black text-slate-800 uppercase tracking-wider mb-1">
+                      Difficulty &amp; Rewards
+                    </label>
+                    <div className="grid grid-cols-4 gap-1.5 text-center">
+                      {(
+                        [
+                          { id: "easy", label: "Easy", xp: "+20XP" },
+                          { id: "medium", label: "Med", xp: "+40XP" },
+                          { id: "hard", label: "Hard", xp: "+75XP" },
+                          { id: "epic", label: "Epic", xp: "+150XP" },
+                        ] as const
+                      ).map((diff) => (
+                        <button
+                          key={diff.id}
+                          type="button"
+                          onClick={() => setNewDifficulty(diff.id)}
+                          className={`p-2 rounded-xl border-2 transition-all ${
+                            newDifficulty === diff.id
+                              ? "bg-[#FF6B8B] text-white border-slate-950 shadow-[2px_2px_0px_0px_#020617] translate-x-[1px] translate-y-[1px]"
+                              : "bg-white text-slate-700 border-slate-200 hover:border-slate-400"
+                          }`}
+                        >
+                          <div className="font-display font-black text-xs">{diff.label}</div>
+                          <div
+                            className={`text-[9px] font-extrabold ${
+                              newDifficulty === diff.id ? "text-white/90" : "text-slate-400"
+                            }`}
+                          >
+                            {diff.xp}
+                          </div>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Recurring Task & Priority Task Toggles */}
+                  <div className="space-y-2.5 pt-1">
+                    {/* Recurring Task Toggle */}
+                    <div className="flex items-center justify-between p-3 rounded-2xl border-2 border-slate-950 bg-[#F0FDF4] shadow-[2px_2px_0px_0px_#020617]">
+                      <div className="pr-2">
+                        <div className="flex items-center gap-1.5 font-display font-black text-xs text-slate-950">
+                          <span className="text-sm">🔄</span>
+                          <span>Recurring Task</span>
+                        </div>
+                        <p className="text-[10px] font-bold text-slate-500 mt-0.5">
+                          Repeats every day after 00:00 Indian Time zone (IST)
+                        </p>
+                      </div>
                       <button
-                        key={item.id}
                         type="button"
-                        onClick={() => setNewCategory(item.id)}
-                        className={`p-2.5 rounded-xl border-2 text-left transition-all ${
-                          newCategory === item.id
-                            ? "bg-[#FEF3C7] border-slate-950 shadow-[2px_2px_0px_0px_#020617] translate-x-[1px] translate-y-[1px]"
-                            : "bg-white border-slate-200 hover:border-slate-400"
+                        role="switch"
+                        aria-checked={newIsRecurring}
+                        onClick={() => setNewIsRecurring(!newIsRecurring)}
+                        id="toggle-recurring-task"
+                        className={`w-12 h-7 rounded-full border-2 border-slate-950 p-0.5 transition-colors relative shrink-0 cursor-pointer ${
+                          newIsRecurring ? "bg-[#06D6A0]" : "bg-slate-200"
                         }`}
                       >
-                        <div className="font-display font-black text-xs text-slate-950">
-                          {item.label}
-                        </div>
-                        <div className="text-[10px] font-bold text-slate-400">
-                          {item.sub}
-                        </div>
+                        <motion.div
+                          layout
+                          transition={{ type: "spring", stiffness: 500, damping: 30 }}
+                          className={`w-5 h-5 rounded-full bg-white border border-slate-950 shadow-[1px_1px_0px_0px_#020617] transform ${
+                            newIsRecurring ? "translate-x-5" : "translate-x-0"
+                          }`}
+                        />
                       </button>
-                    ))}
-                  </div>
-                </div>
+                    </div>
 
-                {/* Difficulty */}
-                <div>
-                  <label className="block text-xs font-display font-black text-slate-800 uppercase tracking-wider mb-1">
-                    Difficulty / Scope
-                  </label>
-                  <div className="grid grid-cols-4 gap-1.5">
-                    {(
-                      [
-                        { id: "easy", label: "Easy", rewards: "+20XP" },
-                        { id: "medium", label: "Med", rewards: "+40XP" },
-                        { id: "hard", label: "Hard", rewards: "+75XP" },
-                        { id: "epic", label: "Epic", rewards: "+150XP" },
-                      ] as const
-                    ).map((diff) => (
+                    {/* Priority Task Toggle */}
+                    <div className="flex items-center justify-between p-3 rounded-2xl border-2 border-slate-950 bg-[#FFF7ED] shadow-[2px_2px_0px_0px_#020617]">
+                      <div className="pr-2">
+                        <div className="flex items-center gap-1.5 font-display font-black text-xs text-[#C2410C]">
+                          <span className="text-sm">⚡</span>
+                          <span>High Priority</span>
+                        </div>
+                        <p className="text-[10px] font-bold text-slate-500 mt-0.5">
+                          Forces task to appear in the Priority section on top
+                        </p>
+                      </div>
                       <button
-                        key={diff.id}
                         type="button"
-                        onClick={() => setNewDifficulty(diff.id)}
-                        className={`py-2 px-1 rounded-xl border-2 text-center transition-all ${
-                          newDifficulty === diff.id
-                            ? "bg-[#FF6B8B] text-white border-slate-950 shadow-[2px_2px_0px_0px_#020617]"
-                            : "bg-white text-slate-700 border-slate-200 hover:border-slate-400"
+                        role="switch"
+                        aria-checked={newIsPriority}
+                        onClick={() => setNewIsPriority(!newIsPriority)}
+                        id="toggle-priority-task"
+                        className={`w-12 h-7 rounded-full border-2 border-slate-950 p-0.5 transition-colors relative shrink-0 cursor-pointer ${
+                          newIsPriority ? "bg-[#FF5722]" : "bg-slate-200"
                         }`}
                       >
-                        <div className="font-display font-black text-xs">{diff.label}</div>
-                        <div className="text-[9px] font-bold opacity-80">{diff.rewards}</div>
+                        <motion.div
+                          layout
+                          transition={{ type: "spring", stiffness: 500, damping: 30 }}
+                          className={`w-5 h-5 rounded-full bg-white border border-slate-950 shadow-[1px_1px_0px_0px_#020617] transform ${
+                            newIsPriority ? "translate-x-5" : "translate-x-0"
+                          }`}
+                        />
                       </button>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Advanced Quest Options: Recurring Task & Priority Toggles */}
-                <div className="pt-2 border-t-2 border-slate-100 space-y-2.5">
-                  {/* Recurring Task Toggle */}
-                  <div className="flex items-center justify-between p-3 rounded-2xl border-2 border-slate-950 bg-[#FDF8EE] shadow-[2px_2px_0px_0px_#020617]">
-                    <div className="pr-2">
-                      <div className="flex items-center gap-1.5 font-display font-black text-xs text-slate-950">
-                        <span className="text-sm">🔄</span>
-                        <span>Recurring Task</span>
-                      </div>
-                      <p className="text-[10px] font-bold text-slate-500 mt-0.5">
-                        Repeats every day after 00:00 Indian Time zone (IST)
-                      </p>
                     </div>
-                    <button
-                      type="button"
-                      role="switch"
-                      aria-checked={newIsRecurring}
-                      onClick={() => setNewIsRecurring(!newIsRecurring)}
-                      id="toggle-recurring-task"
-                      className={`w-12 h-7 rounded-full border-2 border-slate-950 p-0.5 transition-colors relative shrink-0 cursor-pointer ${
-                        newIsRecurring ? "bg-[#06D6A0]" : "bg-slate-200"
-                      }`}
-                    >
-                      <motion.div
-                        layout
-                        transition={{ type: "spring", stiffness: 500, damping: 30 }}
-                        className={`w-5 h-5 rounded-full bg-white border border-slate-950 shadow-[1px_1px_0px_0px_#020617] transform ${
-                          newIsRecurring ? "translate-x-5" : "translate-x-0"
-                        }`}
-                      />
-                    </button>
                   </div>
 
-                  {/* Priority Task Toggle */}
-                  <div className="flex items-center justify-between p-3 rounded-2xl border-2 border-slate-950 bg-[#FFF7ED] shadow-[2px_2px_0px_0px_#020617]">
-                    <div className="pr-2">
-                      <div className="flex items-center gap-1.5 font-display font-black text-xs text-[#C2410C]">
-                        <span className="text-sm">⚡</span>
-                        <span>High Priority</span>
+                  {/* Submit */}
+                  <div className="pt-2 flex gap-2">
+                    <TactileButton
+                      type="button"
+                      onClick={() => setModalOpen(false)}
+                      shadowSize="sm"
+                      className="w-1/3 py-2.5 bg-white border-2 border-slate-950 font-display font-bold text-xs rounded-2xl"
+                    >
+                      Cancel
+                    </TactileButton>
+                    <TactileButton
+                      type="submit"
+                      disabled={creating}
+                      shadowSize="md"
+                      className="w-2/3 py-2.5 bg-[#FF6B8B] hover:bg-[#ff5779] text-white font-display font-black text-sm rounded-2xl border-2 border-slate-950"
+                    >
+                      {creating ? "Forging..." : "Add to Quest Log"}
+                    </TactileButton>
+                  </div>
+                </form>
+              ) : (
+                /* AI Dungeon Master Mode */
+                <div className="mt-4 space-y-4">
+                  {!generatedQuestline ? (
+                    <form onSubmit={handleGenerateAI} className="space-y-4">
+                      <div>
+                        <label className="block text-xs font-display font-black text-slate-800 uppercase tracking-wider mb-1">
+                          Real-Life Goal or Habit to Gamify
+                        </label>
+                        <textarea
+                          required
+                          rows={3}
+                          value={aiGoal}
+                          onChange={(e) => setAiGoal(e.target.value)}
+                          placeholder="e.g. Train for a 5km marathon, learn Python web scraping, read 1 book per week"
+                          className="w-full p-3 bg-[#FDF8EE] border-2 border-slate-950 rounded-2xl text-xs sm:text-sm font-bold text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-[#FF6B8B] resize-none"
+                        />
                       </div>
-                      <p className="text-[10px] font-bold text-slate-500 mt-0.5">
-                        Forces task to appear in the Priority section on top
-                      </p>
-                    </div>
-                    <button
-                      type="button"
-                      role="switch"
-                      aria-checked={newIsPriority}
-                      onClick={() => setNewIsPriority(!newIsPriority)}
-                      id="toggle-priority-task"
-                      className={`w-12 h-7 rounded-full border-2 border-slate-950 p-0.5 transition-colors relative shrink-0 cursor-pointer ${
-                        newIsPriority ? "bg-[#FF5722]" : "bg-slate-200"
-                      }`}
-                    >
-                      <motion.div
-                        layout
-                        transition={{ type: "spring", stiffness: 500, damping: 30 }}
-                        className={`w-5 h-5 rounded-full bg-white border border-slate-950 shadow-[1px_1px_0px_0px_#020617] transform ${
-                          newIsPriority ? "translate-x-5" : "translate-x-0"
-                        }`}
-                      />
-                    </button>
-                  </div>
-                </div>
 
-                {/* Submit */}
-                <div className="pt-2 flex gap-2">
-                  <TactileButton
-                    type="button"
-                    onClick={() => setModalOpen(false)}
-                    shadowSize="sm"
-                    className="w-1/3 py-2.5 bg-white border-2 border-slate-950 font-display font-bold text-xs rounded-2xl"
-                  >
-                    Cancel
-                  </TactileButton>
-                  <TactileButton
-                    type="submit"
-                    disabled={creating}
-                    shadowSize="md"
-                    className="w-2/3 py-2.5 bg-[#FF6B8B] hover:bg-[#ff5779] text-white font-display font-black text-sm rounded-2xl border-2 border-slate-950"
-                  >
-                    {creating ? "Forging..." : "Add to Quest Log"}
-                  </TactileButton>
+                      <div>
+                        <label className="block text-xs font-display font-black text-slate-800 uppercase tracking-wider mb-1">
+                          Campaign Duration
+                        </label>
+                        <div className="grid grid-cols-4 gap-1.5 text-center">
+                          {[3, 5, 7, 14].map((days) => (
+                            <button
+                              key={days}
+                              type="button"
+                              onClick={() => setAiDuration(days)}
+                              className={`py-2 px-1 rounded-xl border-2 transition-all font-display font-black text-xs ${
+                                aiDuration === days
+                                  ? "bg-[#FFD166] text-slate-950 border-slate-950 shadow-[2px_2px_0px_0px_#020617]"
+                                  : "bg-white text-slate-600 border-slate-200 hover:border-slate-400"
+                              }`}
+                            >
+                              {days} Days
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+
+                      <div className="p-3 bg-[#FFF9DB] border-2 border-slate-950 rounded-2xl text-[11px] font-bold text-amber-900 flex items-start gap-2 shadow-[2px_2px_0px_0px_#020617]">
+                        <Sparkles className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
+                        <span>
+                          Powered by our FastAPI Game Engine. Transforms your goal into progressive daily milestones with tailored lore and balanced attribute rewards!
+                        </span>
+                      </div>
+
+                      <div className="pt-2 flex gap-2">
+                        <TactileButton
+                          type="button"
+                          onClick={() => setModalOpen(false)}
+                          shadowSize="sm"
+                          className="w-1/3 py-2.5 bg-white border-2 border-slate-950 font-display font-bold text-xs rounded-2xl"
+                        >
+                          Cancel
+                        </TactileButton>
+                        <TactileButton
+                          type="submit"
+                          disabled={aiGenerating}
+                          shadowSize="md"
+                          className="w-2/3 py-2.5 bg-[#06D6A0] hover:bg-[#05b88a] text-slate-950 font-display font-black text-xs sm:text-sm rounded-2xl border-2 border-slate-950 flex items-center justify-center gap-1.5"
+                        >
+                          <Wand2 className="w-4 h-4" />
+                          <span>{aiGenerating ? "Generating..." : "Generate AI Questline"}</span>
+                        </TactileButton>
+                      </div>
+                    </form>
+                  ) : (
+                    /* AI Questline Generated Preview */
+                    <div className="space-y-3.5">
+                      <div className="p-3 bg-[#E8FAF5] border-2 border-slate-950 rounded-2xl shadow-[2px_2px_0px_0px_#020617]">
+                        <div className="flex items-center justify-between pb-1 border-b border-emerald-200">
+                          <span className="font-display font-black text-xs text-emerald-950">
+                            {generatedQuestline.questline_title}
+                          </span>
+                          <span className="text-[10px] font-black bg-emerald-100 text-emerald-800 px-1.5 py-0.5 rounded-full border border-emerald-400">
+                            +{generatedQuestline.total_estimated_xp} XP • {generatedQuestline.total_estimated_gold} Gold
+                          </span>
+                        </div>
+                        <p className="text-[10px] font-bold text-emerald-800 mt-1 italic">
+                          &ldquo;{generatedQuestline.lore_brief}&rdquo;
+                        </p>
+                      </div>
+
+                      {/* Scrollable list of quests */}
+                      <div className="max-h-48 overflow-y-auto space-y-2 pr-1 custom-scrollbar">
+                        {generatedQuestline.quests.map((q) => (
+                          <div
+                            key={q.day}
+                            className="p-2 bg-white border-2 border-slate-950 rounded-xl flex items-center justify-between gap-2 text-left text-xs shadow-[1px_1px_0px_0px_#020617]"
+                          >
+                            <div className="min-w-0 flex-1">
+                              <div className="font-display font-black text-slate-950 truncate">
+                                Day {q.day}: {q.title}
+                              </div>
+                              <div className="text-[9px] font-bold text-slate-400 flex items-center gap-1.5 mt-0.5">
+                                <span className="capitalize">{q.attribute}</span> •
+                                <span className="capitalize">{q.difficulty}</span>
+                              </div>
+                            </div>
+                            <div className="text-right shrink-0">
+                              <span className="font-display font-black text-[10px] text-[#FF6B8B]">
+                                +{q.xp_reward}XP
+                              </span>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+
+                      <div className="pt-2 flex gap-2">
+                        <TactileButton
+                          type="button"
+                          onClick={() => setGeneratedQuestline(null)}
+                          shadowSize="sm"
+                          className="w-1/3 py-2.5 bg-white border-2 border-slate-950 font-display font-bold text-xs rounded-2xl"
+                        >
+                          Regenerate
+                        </TactileButton>
+                        <TactileButton
+                          type="button"
+                          onClick={handleEnrollAI}
+                          disabled={enrollingAi}
+                          shadowSize="md"
+                          className="w-2/3 py-2.5 bg-[#FF6B8B] hover:bg-[#ff5779] text-white font-display font-black text-xs sm:text-sm rounded-2xl border-2 border-slate-950 flex items-center justify-center gap-1.5"
+                        >
+                          <Sparkles className="w-4 h-4 fill-white" />
+                          <span>{enrollingAi ? "Forging..." : "Forge into Quest Log"}</span>
+                        </TactileButton>
+                      </div>
+                    </div>
+                  )}
                 </div>
-              </form>
+              )}
             </motion.div>
           </div>
         )}
