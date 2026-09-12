@@ -42,14 +42,24 @@ async def normalize_backend_prefix(request: Request, call_next):
         request.scope["path"] = request.scope["path"].replace("/api/backend", "/api", 1)
     return await call_next(request)
 
-# Configure CORS
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=settings.cors_origins or ["*"],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
+# Configure CORS: support allow_origin_regex so Vercel frontend domains are never blocked
+origins = settings.cors_origins
+if "*" in origins or not origins:
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origin_regex=r"^https?://.*",
+        allow_credentials=True,
+        allow_methods=["*"],
+        allow_headers=["*"],
+    )
+else:
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=origins,
+        allow_credentials=True,
+        allow_methods=["*"],
+        allow_headers=["*"],
+    )
 
 # Mount API Routers
 app.include_router(quests.router)

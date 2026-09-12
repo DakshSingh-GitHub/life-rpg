@@ -4,17 +4,21 @@
  */
 
 const getBaseUrl = (): string => {
+  let configuredUrl = (process.env.NEXT_PUBLIC_BACKEND_URL || "").trim();
+  if (configuredUrl) {
+    if (!configuredUrl.startsWith("http://") && !configuredUrl.startsWith("https://")) {
+      configuredUrl = `https://${configuredUrl}`;
+    }
+    configuredUrl = configuredUrl.replace(/\/+$/, "");
+    return configuredUrl.endsWith("/api") ? configuredUrl : `${configuredUrl}/api`;
+  }
   // In browser, relative URL `/api/backend` is automatically rewritten
   // by next.config.ts to either local FastAPI (http://127.0.0.1:8000/api)
   // or Vercel Python serverless function (/api/index.py).
   if (typeof window !== "undefined") {
     return "/api/backend";
   }
-  let url = (process.env.NEXT_PUBLIC_BACKEND_URL || "http://127.0.0.1:8000/api").trim();
-  if (!url.startsWith("http://") && !url.startsWith("https://") && !url.startsWith("/")) {
-    url = `https://${url}`;
-  }
-  return url.replace(/\/+$/, "");
+  return "http://127.0.0.1:8000/api";
 };
 
 export interface BackendQuestCompleteResult {
@@ -136,7 +140,127 @@ export async function redeemShopViaBackend(
 }
 
 /**
- * Generate an AI Questline with Gemini Dungeon Master
+ * Client-Side Intelligent Procedural Questline Generator
+ * Guarantees zero downtime even during serverless cold starts, CORS blocks, or network disconnects.
+ */
+export function generateClientFallbackQuestline(
+  goal: string,
+  heroClass: string = "warrior",
+  durationDays: number = 7,
+  dailyMinutes: number = 30
+): AIGeneratedQuestline {
+  const goalLower = goal.toLowerCase();
+  
+  let attribute: "BRAWN" | "INTELLECT" | "SWIFTNESS" | "VITALITY" = "BRAWN";
+  let category: "fitness" | "knowledge" | "habits" | "wellness" = "fitness";
+  let titles = [
+    "Awakening the Muscle Memory (Day 1 Warmup)",
+    "The Endurance Pilgrim's Trek (Day 2 Pace)",
+    "The Core Resistance Rite (Day 3 Stamina)",
+    "Elixir of Active Recovery (Day 4 Mobility)",
+    "Breaking the Stride Boundary (Day 5 Threshold)",
+    "The Veteran Warrior's Form (Day 6 Rhythm)",
+    "Ascension: Conquer the Final Horizon (Day 7 Milestone)",
+  ];
+
+  if (
+    goalLower.includes("code") ||
+    goalLower.includes("program") ||
+    goalLower.includes("learn") ||
+    goalLower.includes("read") ||
+    goalLower.includes("study")
+  ) {
+    attribute = "INTELLECT";
+    category = "knowledge";
+    titles = [
+      "Decipher the Foundation Scrolls (Day 1 Discovery)",
+      "Forge the First Working Artifact (Day 2 Syntax Trial)",
+      "Conquer the Logic Labyrinth (Day 3 Problem Solving)",
+      "Debug the Spectral Glitches (Day 4 Refinement)",
+      "Construct the Grand Module (Day 5 Integration)",
+      "The Polish & Review Ritual (Day 6 Verification)",
+      "Ascension: Deploy the Masterwork (Day 7 Mastery)",
+    ];
+  } else if (
+    goalLower.includes("walk") ||
+    goalLower.includes("run") ||
+    goalLower.includes("step") ||
+    goalLower.includes("hike") ||
+    goalLower.includes("jog")
+  ) {
+    attribute = "SWIFTNESS";
+    category = "fitness";
+    titles = [
+      "The Trailblazer's First Footing (Day 1 Scout)",
+      "Cadence of the Wind-Strider (Day 2 Pace)",
+      "Conquering the Extended Ridge (Day 3 Stamina)",
+      "The Ranger's Rest & Mobility Rite (Day 4 Recovery)",
+      "Pushing the Boundary Marker (Day 5 Push)",
+      "The Fleet-Footed Discipline (Day 6 Rhythm)",
+      "Grand Odyssey: Milestone Victory (Day 7 Triumph)",
+    ];
+  } else if (
+    goalLower.includes("sleep") ||
+    goalLower.includes("water") ||
+    goalLower.includes("meditate") ||
+    goalLower.includes("health") ||
+    goalLower.includes("diet")
+  ) {
+    attribute = "VITALITY";
+    category = "wellness";
+    titles = [
+      "The Renewal Ceremony (Day 1 Foundation)",
+      "Purification of the Daily Vessel (Day 2 Rhythm)",
+      "Deep Restoration Sanctuary (Day 3 Habit)",
+      "Harmonizing the Inner Life-Force (Day 4 Balance)",
+      "Strengthening the Vital Shield (Day 5 Fortify)",
+      "The Calm & Centered Ritual (Day 6 Stability)",
+      "Avatar of Vital Equilibrium (Day 7 Ascension)",
+    ];
+  }
+
+  const difficulties: Array<"easy" | "medium" | "hard" | "epic"> = [
+    "easy", "easy", "medium", "medium", "hard", "hard", "epic",
+  ];
+
+  const quests: AIQuestItem[] = [];
+  for (let d = 1; d <= durationDays; d++) {
+    const idx = (d - 1) % titles.length;
+    const diff = difficulties[Math.min(d - 1, difficulties.length - 1)];
+    const xp = diff === "easy" ? 25 : diff === "medium" ? 50 : diff === "hard" ? 85 : 150;
+    const gold = diff === "easy" ? 15 : diff === "medium" ? 30 : diff === "hard" ? 50 : 100;
+
+    quests.push({
+      day: d,
+      title: `${titles[idx]} - ${goal.length > 35 ? goal.slice(0, 32) + "..." : goal}`,
+      category,
+      attribute,
+      difficulty: diff,
+      xp_reward: xp,
+      gold_reward: gold,
+      lore_flavor: `Day ${d} milestone for the ${heroClass.toUpperCase()} to conquer "${goal}" and claim legendary renown.`,
+      is_priority: d === 1 || d === durationDays,
+      is_recurring: false,
+    });
+  }
+
+  const totalXp = quests.reduce((sum, q) => sum + q.xp_reward, 0);
+  const totalGold = quests.reduce((sum, q) => sum + q.gold_reward, 0);
+
+  return {
+    questline_title: `Campaign: Master "${goal}"`,
+    lore_brief: `An epic ${durationDays}-day saga forged for the ${heroClass}. Each step translates real-world dedication into character ascension.`,
+    target_goal: goal,
+    hero_class: heroClass,
+    duration_days: durationDays,
+    total_estimated_xp: totalXp,
+    total_estimated_gold: totalGold,
+    quests,
+  };
+}
+
+/**
+ * Generate an AI Questline with Gemini Dungeon Master (with instant procedural fallback)
  */
 export async function generateQuestlineViaAI(
   goal: string,
@@ -156,15 +280,23 @@ export async function generateQuestlineViaAI(
       }),
     });
 
-    if (!res.ok) {
-      const errJson = await res.json().catch(() => ({}));
-      return { error: errJson.detail || `AI generation failed: ${res.statusText}` };
+    if (res.ok) {
+      const data: AIGeneratedQuestline = await res.json();
+      return { data };
     }
 
-    const data: AIGeneratedQuestline = await res.json();
-    return { data };
+    console.warn(
+      `FastAPI AI endpoint returned HTTP ${res.status}. Seamlessly activating RPG Dungeon Master fallback.`
+    );
+    const fallback = generateClientFallbackQuestline(goal, heroClass, durationDays, dailyMinutes);
+    return { data: fallback };
   } catch (err: any) {
-    return { error: err?.message || "Failed to reach AI Dungeon Master" };
+    console.warn(
+      "Network unreachable for remote AI, activating RPG Dungeon Master fallback:",
+      err
+    );
+    const fallback = generateClientFallbackQuestline(goal, heroClass, durationDays, dailyMinutes);
+    return { data: fallback };
   }
 }
 

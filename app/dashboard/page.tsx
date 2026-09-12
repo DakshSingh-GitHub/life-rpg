@@ -326,9 +326,26 @@ export default function DashboardPage() {
     setEnrollingAi(true);
     setFormError(null);
     const res = await enrollQuestlineViaBackend(profile.id, generatedQuestline.quests);
-    setEnrollingAi(false);
     if (!res.success) {
-      setFormError(res.error || "Failed to enroll quests");
+      // Fallback: enroll directly via client Supabase createQuest
+      try {
+        for (const q of generatedQuestline.quests) {
+          await createQuest({
+            title: q.title,
+            category: q.category as any,
+            difficulty: q.difficulty as any,
+            isPriority: q.is_priority,
+            isRecurring: q.is_recurring,
+          });
+        }
+        await refreshData();
+        setModalOpen(false);
+        setGeneratedQuestline(null);
+        setAiGoal("");
+        setModalMode("manual");
+      } catch (clientErr: any) {
+        setFormError(clientErr?.message || "Failed to enroll quests");
+      }
     } else {
       await refreshData();
       setModalOpen(false);
@@ -336,6 +353,7 @@ export default function DashboardPage() {
       setAiGoal("");
       setModalMode("manual");
     }
+    setEnrollingAi(false);
   };
 
   // Handle Quest Toggle
