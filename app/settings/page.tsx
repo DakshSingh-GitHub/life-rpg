@@ -43,37 +43,45 @@ export default function SettingsPage() {
 
   return (
     <div className="min-h-screen bg-[#FDF8EE] text-slate-900 flex flex-col">
-      {/* Top Navbar */}
-      <header className="border-b-3 border-slate-950 bg-white sticky top-0 z-30 shadow-[0px_4px_0px_0px_#020617]">
-        <div className="max-w-5xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <Link
-              href="/dashboard"
-              className="flex items-center gap-1.5 text-xs font-display font-black px-3 py-1.5 bg-[#FDF8EE] hover:bg-[#FFEAEF] border-2 border-slate-950 rounded-xl shadow-[2px_2px_0px_0px_#020617] active:translate-x-[1px] active:translate-y-[1px] transition-all"
-            >
-              <ArrowLeft className="w-4 h-4" />
-              <span>Back to Dashboard</span>
-            </Link>
-          </div>
+      {/* Top Navbar: Floating Pill with Glassmorphism */}
+      <header className="sticky top-3 sm:top-4 z-40 max-w-5xl mx-auto px-4 sm:px-6 w-full pointer-events-none">
+        <div className="relative pointer-events-auto">
+          {/* Glassmorphism precursor: starts 20px (-bottom-5 = 20px) before body content scrolls behind the navbar */}
+          <div
+            aria-hidden="true"
+            className="pointer-events-none absolute -inset-x-2 -top-2 -bottom-5 rounded-full backdrop-blur-[6px] [mask-image:linear-gradient(to_bottom,black_60%,transparent_100%)] -z-10"
+          />
 
-          <div className="flex items-center gap-3">
-            <div
-              className={`flex items-center gap-1 px-2.5 py-1 rounded-xl border-2 border-slate-950 text-xs font-display font-black shadow-[1px_1px_0px_0px_#020617] ${
-                profile.streak_days > 0 ? "bg-[#FFF0E6] text-[#FF5722]" : "bg-slate-100 text-slate-500"
-              }`}
-            >
-              <Flame
-                className={`w-3.5 h-3.5 ${
-                  profile.streak_days > 0 ? "fill-[#FF5722] text-[#FF5722]" : "text-slate-400"
+          <nav className="bg-white/70 backdrop-blur-xl border-3 border-slate-950 rounded-full px-4 sm:px-6 py-2.5 shadow-[4px_4px_0px_0px_#020617] ring-1 ring-white/80 flex items-center justify-between gap-3 transition-all">
+            <div className="flex items-center gap-3">
+              <Link
+                href="/dashboard"
+                className="flex items-center gap-1.5 text-xs font-display font-black px-3.5 py-1.5 bg-[#FDF8EE] hover:bg-[#FFEAEF] border-2 border-slate-950 rounded-full shadow-[2px_2px_0px_0px_#020617] active:translate-x-[1px] active:translate-y-[1px] transition-all cursor-pointer"
+              >
+                <ArrowLeft className="w-4 h-4" />
+                <span>Back to Dashboard</span>
+              </Link>
+            </div>
+
+            <div className="flex items-center gap-2 sm:gap-3">
+              <div
+                className={`flex items-center gap-1 px-3 py-1.5 rounded-full border-2 border-slate-950 text-xs font-display font-black shadow-[1px_1px_0px_0px_#020617] ${
+                  profile.streak_days > 0 ? "bg-[#FFF0E6] text-[#FF5722]" : "bg-slate-100 text-slate-500"
                 }`}
-              />
-              <span>{profile.streak_days}d Streak</span>
+              >
+                <Flame
+                  className={`w-3.5 h-3.5 ${
+                    profile.streak_days > 0 ? "fill-[#FF5722] text-[#FF5722]" : "text-slate-400"
+                  }`}
+                />
+                <span>{profile.streak_days}d Streak</span>
+              </div>
+              <div className="flex items-center gap-1 px-3 py-1.5 bg-[#FFF9DB] text-[#B45309] rounded-full border-2 border-slate-950 text-xs font-display font-black shadow-[1px_1px_0px_0px_#020617]">
+                <Coins className="w-3.5 h-3.5 text-[#F59E0B]" />
+                <span>{profile.gold} Gold</span>
+              </div>
             </div>
-            <div className="flex items-center gap-1 px-2.5 py-1 bg-[#FFF9DB] text-[#B45309] rounded-xl border-2 border-slate-950 text-xs font-display font-black shadow-[1px_1px_0px_0px_#020617]">
-              <Coins className="w-3.5 h-3.5 text-[#F59E0B]" />
-              <span>{profile.gold} Gold</span>
-            </div>
-          </div>
+          </nav>
         </div>
       </header>
 

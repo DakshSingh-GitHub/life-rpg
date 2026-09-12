@@ -138,6 +138,17 @@ export default function DashboardPage() {
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const menuRef = React.useRef<HTMLDivElement>(null);
 
+  // Scroll detection for navbar subtle blur and glassmorphism
+  const [isScrolled, setIsScrolled] = useState(false);
+  useEffect(() => {
+    const handleScroll = () => {
+      setIsScrolled(window.scrollY > 15);
+    };
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    handleScroll();
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
+
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
@@ -329,44 +340,51 @@ export default function DashboardPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#FDF8EE] text-slate-900 selection:bg-[#FFD166] selection:text-slate-950 relative pb-16">
+    <div className="min-h-screen lg:h-screen lg:overflow-hidden bg-[#FDF8EE] text-slate-900 selection:bg-[#FFD166] selection:text-slate-950 relative flex flex-col">
       {/* Comic Dot Texture */}
       <div className="pointer-events-none fixed inset-0 comic-dots z-0" />
 
       {/* ============================================================ */}
-      {/* 1. TOP HEADER & ADVENTURER STATUS BAR                        */}
+      {/* 1. TOP HEADER & ADVENTURER STATUS BAR: FLOATING PILL NAVBAR  */}
       {/* ============================================================ */}
-      <header className="relative z-20 bg-white border-b-3 border-slate-950 px-4 sm:px-6 lg:px-8 py-3.5 shadow-[0px_4px_0px_0px_#020617]">
-        <div className="max-w-6xl mx-auto flex items-center justify-between flex-wrap gap-3">
-          {/* Logo & Back */}
-          <div className="flex items-center gap-3">
+      <header className="fixed top-3 sm:top-4 left-0 right-0 z-40 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pointer-events-none">
+        <div className="relative pointer-events-auto">
+          {/* Glassmorphism precursor: starts 20px (-bottom-5 = 20px) before body content scrolls behind the navbar */}
+          <div
+            aria-hidden="true"
+            className="pointer-events-none absolute -inset-x-2 -top-2 -bottom-5 rounded-full backdrop-blur-[6px] [mask-image:linear-gradient(to_bottom,black_60%,transparent_100%)] -z-10"
+          />
+
+          <nav className="bg-white/70 backdrop-blur-xl border-3 border-slate-950 rounded-full px-3.5 sm:px-6 py-2.5 shadow-[4px_4px_0px_0px_#020617] ring-1 ring-white/80 flex items-center justify-between gap-2.5 transition-all">
+          {/* Brand & Page Badge */}
+          <div className="flex items-center gap-2 sm:gap-3">
             <Link
               href="/"
-              className="flex items-center gap-2 group focus:outline-none"
+              className="flex items-center gap-2 sm:gap-2.5 group focus:outline-none"
               title="Return to Home"
             >
-              <div className="w-9 h-9 rounded-2xl bg-[#FF6B8B] border-2 border-slate-950 flex items-center justify-center shadow-[2px_2px_0px_0px_#020617]">
-                <Sword className="w-5 h-5 text-white transform rotate-45" />
+              <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-[#FF6B8B] border-2 border-slate-950 flex items-center justify-center shadow-[1.5px_1.5px_0px_0px_#020617] group-hover:rotate-12 transition-transform">
+                <Sword className="w-4 h-4 sm:w-4.5 sm:h-4.5 text-white transform rotate-45" />
               </div>
-              <span className="font-display font-black text-xl tracking-tight text-slate-950">
+              <span className="font-display font-black text-lg sm:text-xl tracking-tight text-slate-950">
                 Life<span className="text-[#FF6B8B]">RPG</span>
               </span>
             </Link>
-            <span className="hidden sm:inline-block bg-[#FEF3C7] text-slate-950 text-xs font-black px-2.5 py-1 rounded-xl border-2 border-slate-950 shadow-[1px_1px_0px_0px_#020617]">
+            <span className="hidden sm:inline-block bg-[#FEF3C7] text-slate-950 text-[11px] font-black px-2.5 py-0.5 rounded-full border-2 border-slate-950 shadow-[1px_1px_0px_0px_#020617]">
               Dashboard
             </span>
           </div>
 
-          {/* Quick Metrics (Streak, Gold, Profile, Logout) */}
+          {/* Quick Metrics (Streak, Gold, Profile Dropdown) */}
           <div className="flex items-center gap-2 sm:gap-3">
             {/* Streak Counter */}
             <button
               type="button"
               onClick={() => setStreakModalOpen(true)}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-2xl border-2 border-slate-950 shadow-[2px_2px_0px_0px_#020617] active:translate-x-[1px] active:translate-y-[1px] transition-all cursor-pointer focus:outline-none select-none ${
+              className={`flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-full border-2 border-slate-950 shadow-[2px_2px_0px_0px_#020617] active:translate-x-[1px] active:translate-y-[1px] transition-all cursor-pointer focus:outline-none select-none ${
                 profile.streak_days > 0
-                  ? "bg-[#FFF0E6] text-[#FF5722]"
-                  : "bg-slate-100 text-slate-500"
+                  ? "bg-[#FFF0E6]/90 backdrop-blur-sm text-[#FF5722] hover:bg-[#ffe5d4]"
+                  : "bg-slate-100/90 backdrop-blur-sm text-slate-500 hover:bg-slate-200"
               }`}
               title={
                 profile.streak_days > 0
@@ -387,7 +405,7 @@ export default function DashboardPage() {
 
             {/* Gold Balance */}
             <div
-              className="flex items-center gap-1.5 px-3 py-1.5 bg-[#FFF9DB] text-[#B45309] rounded-2xl border-2 border-slate-950 shadow-[2px_2px_0px_0px_#020617]"
+              className="flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 bg-[#FFF9DB]/90 backdrop-blur-sm text-[#B45309] rounded-full border-2 border-slate-950 shadow-[2px_2px_0px_0px_#020617]"
               title="Spend Gold in the Reward Armory"
             >
               <Coins className="w-4 h-4 text-[#F59E0B]" />
@@ -397,16 +415,16 @@ export default function DashboardPage() {
             </div>
 
             {/* User Dropdown Menu */}
-            <div className="relative pl-2 border-l-2 border-slate-200" ref={menuRef}>
+            <div className="relative pl-1 sm:pl-2 border-l-2 border-slate-200" ref={menuRef}>
               <button
                 type="button"
                 onClick={() => setUserMenuOpen(!userMenuOpen)}
-                className="flex items-center gap-2 px-2.5 py-1.5 bg-white hover:bg-[#FDF8EE] border-2 border-slate-950 rounded-2xl shadow-[2px_2px_0px_0px_#020617] active:translate-x-[1px] active:translate-y-[1px] transition-all focus:outline-none"
+                className="flex items-center gap-2 pl-1 sm:pl-1.5 pr-2 sm:pr-2.5 py-1 bg-white/85 backdrop-blur-sm hover:bg-[#FDF8EE] border-2 border-slate-950 rounded-full shadow-[2px_2px_0px_0px_#020617] active:translate-x-[1px] active:translate-y-[1px] transition-all focus:outline-none cursor-pointer"
                 aria-expanded={userMenuOpen}
                 aria-haspopup="true"
                 id="user-dropdown-btn"
               >
-                <div className="w-8 h-8 rounded-xl bg-[#E8FAF5] border-2 border-slate-950 flex items-center justify-center font-display font-black text-xs shrink-0 shadow-[1px_1px_0px_0px_#020617]">
+                <div className="w-7 h-7 rounded-full bg-[#E8FAF5] border-2 border-slate-950 flex items-center justify-center font-display font-black text-xs shrink-0 shadow-[1px_1px_0px_0px_#020617]">
                   {profile.avatar_class === "warrior" && "🥊"}
                   {profile.avatar_class === "mage" && "🧠"}
                   {profile.avatar_class === "rogue" && "⚡"}
@@ -435,7 +453,7 @@ export default function DashboardPage() {
                     animate={{ opacity: 1, y: 0, scale: 1 }}
                     exit={{ opacity: 0, y: 6, scale: 0.96 }}
                     transition={{ duration: 0.15 }}
-                    className="absolute right-0 mt-2 w-64 bg-white border-3 border-slate-950 rounded-2xl shadow-[6px_6px_0px_0px_#020617] py-2 z-50 overflow-hidden"
+                    className="absolute right-0 mt-3 w-64 bg-white/90 backdrop-blur-xl border-3 border-slate-950 rounded-3xl shadow-[6px_6px_0px_0px_#020617] py-2.5 z-50 overflow-hidden ring-1 ring-white/60"
                   >
                     {/* User Header summary inside menu */}
                     <div className="px-3.5 py-2.5 border-b-2 border-slate-100 bg-[#FDF8EE]/80">
@@ -461,7 +479,7 @@ export default function DashboardPage() {
                         <div className="flex flex-col min-w-0">
                           <span className="text-slate-950 group-hover:text-[#FF6B8B]">My Profile</span>
                           <span className="text-[10px] font-bold text-slate-400 group-hover:text-slate-500 truncate">
-                            Edit name, DOB, country &amp; archetype
+                            Edit name, age &amp; origin
                           </span>
                         </div>
                       </Link>
@@ -472,8 +490,8 @@ export default function DashboardPage() {
                         onClick={() => setUserMenuOpen(false)}
                         className="flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-display font-black text-slate-800 hover:bg-[#E8FAF5] hover:text-[#059669] transition-colors group"
                       >
-                        <div className="w-7 h-7 rounded-lg bg-[#E8FAF5] group-hover:bg-white border border-slate-950 flex items-center justify-center text-[#059669] shrink-0 shadow-[1px_1px_0px_0px_#020617]">
-                          <Users className="w-3.5 h-3.5" />
+                        <div className="w-7 h-7 rounded-lg bg-[#E8FAF5] group-hover:bg-white border border-slate-950 flex items-center justify-center text-[#06D6A0] shrink-0 shadow-[1px_1px_0px_0px_#020617]">
+                          <Users className="w-3.5 h-3.5 text-[#059669]" />
                         </div>
                         <div className="flex flex-col min-w-0">
                           <div className="flex items-center gap-1.5">
@@ -532,589 +550,621 @@ export default function DashboardPage() {
               </AnimatePresence>
             </div>
           </div>
+        </nav>
         </div>
       </header>
 
-      {/* Main Content Area */}
-      <main className="relative z-10 max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 pt-6 sm:pt-8 space-y-6">
-        {/* ============================================================ */}
-        {/* 2. HERO PROGRESSION BAR (Non-Linear XP Curve)                 */}
-        {/* ============================================================ */}
-        <section className="bg-white border-3 border-slate-950 rounded-3xl p-5 sm:p-6 shadow-[5px_5px_0px_0px_#020617]">
-          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-            {/* Left: Avatar, Name & Level Badge */}
-            <div className="flex items-center gap-3.5">
-              <div className="relative">
-                <div className="w-14 h-14 rounded-2xl bg-[#FFD166] border-3 border-slate-950 flex items-center justify-center text-2xl shadow-[3px_3px_0px_0px_#020617]">
-                  {profile.avatar_class === "warrior" && "🥊"}
-                  {profile.avatar_class === "mage" && "🧠"}
-                  {profile.avatar_class === "rogue" && "⚡"}
-                  {profile.avatar_class === "druid" && "🌿"}
+      {/* Main Content Area: Responsive 30% / 70% Two-Column Layout */}
+      <main className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full flex-1 min-h-0 lg:overflow-hidden flex flex-col pt-24 lg:pt-0 pb-6">
+        <div className="flex flex-col lg:flex-row gap-6 items-start lg:h-screen">
+          {/* ============================================================ */}
+          {/* LEFT 30% COLUMN: FIXED (UNAFFECTED BY SCROLLING)             */}
+          {/* ============================================================ */}
+          <aside className="w-full lg:w-[32%] xl:w-[30%] shrink-0 space-y-3.5 lg:pt-28 lg:pb-6 lg:h-auto custom-scrollbar-none pr-1.5 pb-2">
+            {/* 1. Adventurer Profile, XP & Completion Card */}
+            <div className="bg-white border-3 border-slate-950 rounded-3xl p-4 sm:p-4.5 shadow-[5px_5px_0px_0px_#020617]">
+              {/* User Identity Header */}
+              <div className="flex items-center gap-3 pb-3 border-b-2 border-slate-100">
+                <div className="relative shrink-0">
+                  <div className="w-12 h-12 rounded-2xl bg-[#FFD166] border-3 border-slate-950 flex items-center justify-center text-xl shadow-[2.5px_2.5px_0px_0px_#020617]">
+                    {profile.avatar_class === "warrior" && "🥊"}
+                    {profile.avatar_class === "mage" && "🧠"}
+                    {profile.avatar_class === "rogue" && "⚡"}
+                    {profile.avatar_class === "druid" && "🌿"}
+                  </div>
+                  <div className="absolute -bottom-1 -right-1 bg-slate-950 text-white font-display font-black text-[9px] px-1.5 py-0.5 rounded-md border border-white">
+                    LVL {profile.level}
+                  </div>
                 </div>
-                <div className="absolute -bottom-2 -right-2 bg-slate-950 text-white font-display font-black text-[10px] px-1.5 py-0.5 rounded-lg border border-white">
-                  LVL {profile.level}
-                </div>
-              </div>
 
-              <div>
-                <div className="flex items-center gap-2 flex-wrap">
-                  <h1 className="font-display font-black text-xl sm:text-2xl text-slate-950">
-                    {profile.full_name || profile.username}
-                  </h1>
-                  <span className="bg-[#FFEAEF] text-[#FF6B8B] text-[11px] font-black uppercase px-2 py-0.5 rounded-full border border-[#FF6B8B]">
-                    Level {profile.level} Adventurer
-                  </span>
-                  {profile.country && (
-                    <span className="bg-[#FDF8EE] text-slate-700 text-[11px] font-black px-2 py-0.5 rounded-full border border-slate-950/20">
-                      📍 {profile.country}
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center gap-1.5 flex-wrap">
+                    <h1 className="font-display font-black text-base sm:text-lg text-slate-950 truncate">
+                      {profile.full_name || profile.username}
+                    </h1>
+                  </div>
+                  <div className="flex items-center gap-1.5 flex-wrap mt-0.5">
+                    <span className="bg-[#FFEAEF] text-[#FF6B8B] text-[9px] font-black uppercase px-2 py-0.5 rounded-full border border-[#FF6B8B]">
+                      Level {profile.level} Adventurer
                     </span>
-                  )}
+                    {profile.country && (
+                      <span className="bg-[#FDF8EE] text-slate-700 text-[9px] font-black px-1.5 py-0.5 rounded-full border border-slate-950/20">
+                        📍 {profile.country}
+                      </span>
+                    )}
+                  </div>
+                  <p className="text-[10px] font-bold text-slate-400 truncate mt-0.5">
+                    @{profile.username}
+                  </p>
                 </div>
-                <p className="text-xs font-bold text-slate-500 mt-0.5">
-                  @{profile.username} • Next Milestone: {nextLevelXp - profile.current_xp} XP needed for Level{" "}
-                  {profile.level + 1}
-                </p>
+              </div>
+
+              {/* Progress Bars: Experience Points (XP) & Daily Completion */}
+              <div className="pt-3 space-y-3">
+                {/* XP Bar */}
+                <div>
+                  <div className="flex justify-between items-center text-xs font-display font-black mb-1">
+                    <span className="text-slate-950 uppercase tracking-wider flex items-center gap-1.5 text-[11px]">
+                      <Sparkles className="w-3.5 h-3.5 text-[#10B981]" />
+                      <span>Experience (XP)</span>
+                    </span>
+                    <span className="text-slate-950 font-black text-xs">
+                      {profile.current_xp} / {nextLevelXp} ({xpPercentage}%)
+                    </span>
+                  </div>
+                  <div className="w-full h-3.5 bg-[#FDF8EE] rounded-full border-2 border-slate-950 p-0.5 overflow-hidden shadow-inner">
+                    <motion.div
+                      initial={{ width: 0 }}
+                      animate={{ width: `${xpPercentage}%` }}
+                      transition={{ duration: 0.5, ease: "easeOut" }}
+                      style={{ width: `${xpPercentage}%`, backgroundColor: "#10B981" }}
+                      className="h-full rounded-full candy-stripes shadow-[0_0_8px_rgba(16,185,129,0.5)]"
+                    />
+                  </div>
+                  <p className="text-[10px] font-bold text-slate-400 mt-1">
+                    {nextLevelXp - profile.current_xp} XP needed for Level {profile.level + 1}
+                  </p>
+                </div>
+
+                {/* Daily Quest Completion Bar */}
+                <div className="pt-2.5 border-t border-dashed border-slate-200">
+                  <div className="flex justify-between items-center text-xs font-display font-black mb-1">
+                    <span className="text-slate-700 uppercase tracking-wider flex items-center gap-1.5 text-[11px]">
+                      <CheckCircle2 className="w-3.5 h-3.5 text-[#10B981]" />
+                      <span>Completion</span>
+                    </span>
+                    <span className="text-slate-800 font-bold text-xs">
+                      {completedCount} / {totalCount} ({completionPercentage}%)
+                    </span>
+                  </div>
+                  <div className="w-full h-3 bg-[#FDF8EE] rounded-full border-2 border-slate-950 p-0.5 overflow-hidden">
+                    <motion.div
+                      initial={{ width: 0 }}
+                      animate={{ width: `${completionPercentage}%` }}
+                      transition={{ duration: 0.5, ease: "easeOut" }}
+                      style={{ width: `${completionPercentage}%`, backgroundColor: "#10B981" }}
+                      className="h-full rounded-full bg-[#10B981]"
+                    />
+                  </div>
+                  <div className="flex justify-between items-center text-[10px] font-bold text-slate-400 mt-1">
+                    <span>{activeCount} active remaining</span>
+                    <span>{completedCount} finished today</span>
+                  </div>
+                </div>
               </div>
             </div>
 
-            {/* Right: Quick Tab Switcher */}
-            <div className="flex items-center bg-[#FDF8EE] p-1.5 rounded-2xl border-2 border-slate-950 w-full sm:w-auto">
-              <button
-                onClick={() => setActiveTab("quests")}
-                className={`flex-1 sm:flex-initial px-4 py-2 font-display font-black text-xs sm:text-sm rounded-xl transition-all flex items-center justify-center gap-1.5 ${
-                  activeTab === "quests"
-                    ? "bg-[#FF6B8B] text-white border-2 border-slate-950 shadow-[2px_2px_0px_0px_#020617]"
-                    : "text-slate-600 hover:text-slate-950 border-2 border-transparent"
-                }`}
-              >
-                <Sword className="w-3.5 h-3.5" />
-                <span>Quests ({activeCount})</span>
-              </button>
-              <button
-                onClick={() => setActiveTab("shop")}
-                className={`flex-1 sm:flex-initial px-4 py-2 font-display font-black text-xs sm:text-sm rounded-xl transition-all flex items-center justify-center gap-1.5 ${
-                  activeTab === "shop"
-                    ? "bg-[#FFD166] text-slate-950 border-2 border-slate-950 shadow-[2px_2px_0px_0px_#020617]"
-                    : "text-slate-600 hover:text-slate-950 border-2 border-transparent"
-                }`}
-              >
-                <ShoppingBag className="w-3.5 h-3.5" />
-                <span>Armory &amp; Vault</span>
-              </button>
-            </div>
-          </div>
+            {/* 2. Skillset Levels Card (Brawn, Intellect, Swiftness, Vitality) */}
+            <div className="bg-white border-3 border-slate-950 rounded-3xl p-3.5 sm:p-4 shadow-[5px_5px_0px_0px_#020617]">
+              <div className="flex items-center justify-between pb-2.5 border-b-2 border-slate-100 mb-2.5">
+                <div className="flex items-center gap-2">
+                  <div className="w-5 h-5 rounded-md bg-[#FFD166] border border-slate-950 flex items-center justify-center text-[11px] font-black shadow-[1px_1px_0px_0px_#020617]">
+                    ⚡
+                  </div>
+                  <h3 className="font-display font-black text-xs sm:text-sm text-slate-950 uppercase tracking-wider">
+                    Skillset Levels
+                  </h3>
+                </div>
+                <span className="text-[10px] font-bold text-slate-400">4 Attributes</span>
+              </div>
 
-          {/* Progress Bars: Level XP & Quest Completion (Solid Vibrant Green) */}
-          <div className="mt-5 pt-4 border-t-2 border-slate-100 space-y-4">
-            {/* Primary Bar: Experience Points (XP) & Level Completion in Vibrant Green */}
-            <div>
-              <div className="flex justify-between items-center text-xs font-display font-black mb-1.5">
-                <span className="text-slate-950 uppercase tracking-wider flex items-center gap-1.5">
-                  <Sparkles className="w-4 h-4 text-[#10B981]" />
-                  <span>Experience Points (XP)</span>
-                </span>
-                <span className="text-slate-950 font-black">
-                  {profile.current_xp} / {nextLevelXp} XP ({xpPercentage}%)
-                </span>
-              </div>
-              <div className="w-full h-5 bg-[#FDF8EE] rounded-full border-2 border-slate-950 p-0.5 overflow-hidden shadow-inner">
-                <motion.div
-                  initial={{ width: 0 }}
-                  animate={{ width: `${xpPercentage}%` }}
-                  transition={{ duration: 0.5, ease: "easeOut" }}
-                  style={{ width: `${xpPercentage}%`, backgroundColor: "#10B981" }}
-                  className="h-full rounded-full candy-stripes shadow-[0_0_8px_rgba(16,185,129,0.5)]"
-                />
-              </div>
-            </div>
+              {/* 2x2 Attributes Grid */}
+              <div className="grid grid-cols-2 gap-2 sm:gap-2.5">
+                {/* BRAWN */}
+                <div className="bg-[#FDF8EE] border-2 border-slate-950 rounded-xl p-2 sm:p-2.5 shadow-[2px_2px_0px_0px_#020617] flex flex-col justify-between">
+                  <div className="flex items-center justify-between">
+                    <span className="text-lg">🥊</span>
+                    <span className="bg-[#FFEAEF] text-[#FF6B8B] font-display font-black text-[9px] px-1.5 py-0.5 rounded-md border border-[#FF6B8B]">
+                      LVL {brawnStat.level}
+                    </span>
+                  </div>
+                  <div className="mt-1.5">
+                    <div className="font-display font-black text-xs text-slate-950">Brawn</div>
+                    <div className="text-[8px] font-bold text-slate-400 truncate">Fitness &amp; Strength</div>
+                    <div className="w-full h-1.5 bg-white rounded-full border border-slate-950 mt-1 overflow-hidden">
+                      <div
+                        className="h-full bg-[#FF6B8B] rounded-full transition-all duration-500"
+                        style={{ width: `${brawnStat.percent}%` }}
+                      />
+                    </div>
+                  </div>
+                </div>
 
-            {/* Secondary Bar: Daily Quest Completion in Vibrant Green */}
-            <div className="pt-2 border-t border-dashed border-slate-200">
-              <div className="flex justify-between items-center text-xs font-display font-black mb-1.5">
-                <span className="text-slate-700 uppercase tracking-wider flex items-center gap-1.5">
-                  <CheckCircle2 className="w-3.5 h-3.5 text-[#10B981]" />
-                  <span>Daily Quests Completed</span>
-                </span>
-                <span className="text-slate-800 font-bold">
-                  {completedCount} / {totalCount} Quests ({completionPercentage}%)
-                </span>
-              </div>
-              <div className="w-full h-3.5 bg-[#FDF8EE] rounded-full border-2 border-slate-950 p-0.5 overflow-hidden">
-                <motion.div
-                  initial={{ width: 0 }}
-                  animate={{ width: `${completionPercentage}%` }}
-                  transition={{ duration: 0.5, ease: "easeOut" }}
-                  style={{ width: `${completionPercentage}%`, backgroundColor: "#10B981" }}
-                  className="h-full rounded-full bg-[#10B981]"
-                />
-              </div>
-            </div>
-          </div>
-        </section>
+                {/* INTELLECT */}
+                <div className="bg-[#FDF8EE] border-2 border-slate-950 rounded-xl p-2 sm:p-2.5 shadow-[2px_2px_0px_0px_#020617] flex flex-col justify-between">
+                  <div className="flex items-center justify-between">
+                    <span className="text-lg">🧠</span>
+                    <span className="bg-[#F0EBFF] text-[#8B5CF6] font-display font-black text-[9px] px-1.5 py-0.5 rounded-md border border-[#8B5CF6]">
+                      LVL {intellectStat.level}
+                    </span>
+                  </div>
+                  <div className="mt-1.5">
+                    <div className="font-display font-black text-xs text-slate-950">Intellect</div>
+                    <div className="text-[8px] font-bold text-slate-400 truncate">Focus &amp; Learning</div>
+                    <div className="w-full h-1.5 bg-white rounded-full border border-slate-950 mt-1 overflow-hidden">
+                      <div
+                        className="h-full bg-[#8B5CF6] rounded-full transition-all duration-500"
+                        style={{ width: `${intellectStat.percent}%` }}
+                      />
+                    </div>
+                  </div>
+                </div>
 
-        {/* ============================================================ */}
-        {/* 3. CORE ATTRIBUTES (Uncluttered 4-Pillar Grid)                */}
-        {/* ============================================================ */}
-        <section className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
-          {/* BRAWN */}
-          <div className="bg-white border-3 border-slate-950 rounded-2xl p-3.5 sm:p-4 shadow-[3px_3px_0px_0px_#020617] flex flex-col justify-between">
-            <div className="flex items-center justify-between">
-              <span className="text-2xl">🥊</span>
-              <span className="bg-[#FFEAEF] text-[#FF6B8B] font-display font-black text-xs px-2 py-0.5 rounded-lg border border-[#FF6B8B]">
-                LVL {brawnStat.level}
-              </span>
-            </div>
-            <div className="mt-3">
-              <div className="font-display font-black text-sm text-slate-950">Brawn</div>
-              <div className="text-[11px] font-bold text-slate-500">Fitness &amp; Strength</div>
-              {/* Mini progress bar */}
-              <div className="w-full h-2 bg-[#FDF8EE] rounded-full border border-slate-950 mt-2 overflow-hidden">
-                <div
-                  className="h-full bg-[#FF6B8B] rounded-full transition-all duration-500"
-                  style={{ width: `${brawnStat.percent}%` }}
-                />
+                {/* SWIFTNESS */}
+                <div className="bg-[#FDF8EE] border-2 border-slate-950 rounded-xl p-2 sm:p-2.5 shadow-[2px_2px_0px_0px_#020617] flex flex-col justify-between">
+                  <div className="flex items-center justify-between">
+                    <span className="text-lg">⚡</span>
+                    <span className="bg-[#E8FAF5] text-[#06D6A0] font-display font-black text-[9px] px-1.5 py-0.5 rounded-md border border-[#06D6A0]">
+                      LVL {swiftnessStat.level}
+                    </span>
+                  </div>
+                  <div className="mt-1.5">
+                    <div className="font-display font-black text-xs text-slate-950">Swiftness</div>
+                    <div className="text-[8px] font-bold text-slate-400 truncate">Daily Execution</div>
+                    <div className="w-full h-1.5 bg-white rounded-full border border-slate-950 mt-1 overflow-hidden">
+                      <div
+                        className="h-full bg-[#06D6A0] rounded-full transition-all duration-500"
+                        style={{ width: `${swiftnessStat.percent}%` }}
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* VITALITY */}
+                <div className="bg-[#FDF8EE] border-2 border-slate-950 rounded-xl p-2 sm:p-2.5 shadow-[2px_2px_0px_0px_#020617] flex flex-col justify-between">
+                  <div className="flex items-center justify-between">
+                    <span className="text-lg">🌿</span>
+                    <span className="bg-[#FFF8E7] text-[#D97706] font-display font-black text-[9px] px-1.5 py-0.5 rounded-md border border-[#D97706]">
+                      LVL {vitalityStat.level}
+                    </span>
+                  </div>
+                  <div className="mt-1.5">
+                    <div className="font-display font-black text-xs text-slate-950">Vitality</div>
+                    <div className="text-[8px] font-bold text-slate-400 truncate">Mind &amp; Recovery</div>
+                    <div className="w-full h-1.5 bg-white rounded-full border border-slate-950 mt-1 overflow-hidden">
+                      <div
+                        className="h-full bg-[#D97706] rounded-full transition-all duration-500"
+                        style={{ width: `${vitalityStat.percent}%` }}
+                      />
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
-          </div>
+          </aside>
 
-          {/* INTELLECT */}
-          <div className="bg-white border-3 border-slate-950 rounded-2xl p-3.5 sm:p-4 shadow-[3px_3px_0px_0px_#020617] flex flex-col justify-between">
-            <div className="flex items-center justify-between">
-              <span className="text-2xl">🧠</span>
-              <span className="bg-[#F0EBFF] text-[#8B5CF6] font-display font-black text-xs px-2 py-0.5 rounded-lg border border-[#8B5CF6]">
-                LVL {intellectStat.level}
-              </span>
-            </div>
-            <div className="mt-3">
-              <div className="font-display font-black text-sm text-slate-950">Intellect</div>
-              <div className="text-[11px] font-bold text-slate-500">Focus &amp; Learning</div>
-              <div className="w-full h-2 bg-[#FDF8EE] rounded-full border border-slate-950 mt-2 overflow-hidden">
-                <div
-                  className="h-full bg-[#8B5CF6] rounded-full transition-all duration-500"
-                  style={{ width: `${intellectStat.percent}%` }}
-                />
-              </div>
-            </div>
-          </div>
-
-          {/* SWIFTNESS */}
-          <div className="bg-white border-3 border-slate-950 rounded-2xl p-3.5 sm:p-4 shadow-[3px_3px_0px_0px_#020617] flex flex-col justify-between">
-            <div className="flex items-center justify-between">
-              <span className="text-2xl">⚡</span>
-              <span className="bg-[#E8FAF5] text-[#06D6A0] font-display font-black text-xs px-2 py-0.5 rounded-lg border border-[#06D6A0]">
-                LVL {swiftnessStat.level}
-              </span>
-            </div>
-            <div className="mt-3">
-              <div className="font-display font-black text-sm text-slate-950">Swiftness</div>
-              <div className="text-[11px] font-bold text-slate-500">Daily Execution</div>
-              <div className="w-full h-2 bg-[#FDF8EE] rounded-full border border-slate-950 mt-2 overflow-hidden">
-                <div
-                  className="h-full bg-[#06D6A0] rounded-full transition-all duration-500"
-                  style={{ width: `${swiftnessStat.percent}%` }}
-                />
-              </div>
-            </div>
-          </div>
-
-          {/* VITALITY */}
-          <div className="bg-white border-3 border-slate-950 rounded-2xl p-3.5 sm:p-4 shadow-[3px_3px_0px_0px_#020617] flex flex-col justify-between">
-            <div className="flex items-center justify-between">
-              <span className="text-2xl">🌿</span>
-              <span className="bg-[#FFF8E7] text-[#D97706] font-display font-black text-xs px-2 py-0.5 rounded-lg border border-[#D97706]">
-                LVL {vitalityStat.level}
-              </span>
-            </div>
-            <div className="mt-3">
-              <div className="font-display font-black text-sm text-slate-950">Vitality</div>
-              <div className="text-[11px] font-bold text-slate-500">Mind &amp; Recovery</div>
-              <div className="w-full h-2 bg-[#FDF8EE] rounded-full border border-slate-950 mt-2 overflow-hidden">
-                <div
-                  className="h-full bg-[#D97706] rounded-full transition-all duration-500"
-                  style={{ width: `${vitalityStat.percent}%` }}
-                />
-              </div>
-            </div>
-          </div>
-        </section>
-
-        {/* ============================================================ */}
-        {/* 4. MAIN BODY: QUESTS TAB OR SHOP TAB                         */}
-        {/* ============================================================ */}
-        {activeTab === "quests" ? (
-          <section className="bg-white border-3 border-slate-950 rounded-3xl p-5 sm:p-6 shadow-[5px_5px_0px_0px_#020617]">
-            {/* Quests Header & Controls */}
-            <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 pb-4 border-b-2 border-slate-100">
+          {/* ============================================================ */}
+          {/* RIGHT 70% COLUMN: THE ONLY SCROLLABLE SECTION                */}
+          {/* ============================================================ */}
+          <div
+            className="w-full lg:w-[68%] xl:w-[70%] min-w-0 space-y-5 lg:h-screen lg:overflow-y-auto lg:pt-28 pb-20 custom-scrollbar-none scrollbar-none [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden pr-1"
+            id="quest-log-scroll-column"
+          >
+            {/* Top Navigation & View Switcher Bar */}
+            <div className="bg-white border-3 border-slate-950 rounded-3xl p-4 sm:p-5 shadow-[5px_5px_0px_0px_#020617] flex flex-col sm:flex-row sm:items-center justify-between gap-3">
               <div>
                 <h2 className="font-display font-black text-xl sm:text-2xl text-slate-950">
-                  Quest Log
+                  {activeTab === "quests" ? "Quest Log" : "Armory & Rewards Vault"}
                 </h2>
                 <p className="text-xs font-bold text-slate-500 mt-0.5">
-                  {activeCount} active quests remaining • {completedCount} completed today
+                  {activeTab === "quests"
+                    ? `${activeCount} active quests remaining • ${completedCount} completed today`
+                    : "Convert your hard-earned quest gold into real-life treats, perks, and badges"}
                 </p>
               </div>
 
-              {/* Category Filter + Add Quest */}
-              <div className="flex items-center flex-wrap gap-2 w-full md:w-auto">
-                <div className="flex items-center bg-[#FDF8EE] p-1 rounded-2xl border-2 border-slate-950 overflow-x-auto text-xs font-display font-black">
-                  {(
-                    [
-                      { id: "ALL", label: "All" },
-                      { id: "fitness", label: "🥊 Brawn" },
-                      { id: "knowledge", label: "🧠 Intellect" },
-                      { id: "habits", label: "⚡ Swift" },
-                      { id: "wellness", label: "🌿 Vital" },
-                    ] as const
-                  ).map((cat) => (
-                    <button
-                      key={cat.id}
-                      onClick={() => setSelectedCategory(cat.id)}
-                      className={`px-2.5 py-1 rounded-xl transition-all ${
-                        selectedCategory === cat.id
-                          ? "bg-[#FF6B8B] text-white border-2 border-slate-950 shadow-[1px_1px_0px_0px_#020617]"
-                          : "text-slate-600 hover:text-slate-950"
-                      }`}
-                    >
-                      {cat.label}
-                    </button>
-                  ))}
-                </div>
-
+              {/* Tab Switcher */}
+              <div className="flex items-center bg-[#FDF8EE] p-1.5 rounded-2xl border-2 border-slate-950 self-start sm:self-auto shrink-0">
                 <button
-                  onClick={() => {
-                    setFormError(null);
-                    setModalOpen(true);
-                  }}
-                  className="px-4 py-2 bg-[#FFD166] hover:bg-[#fcc849] text-slate-950 font-display font-black text-xs sm:text-sm rounded-2xl border-2 border-slate-950 shadow-[3px_3px_0px_0px_#020617] active:translate-x-[1px] active:translate-y-[1px] active:shadow-[1px_1px_0px_0px_#020617] transition-all flex items-center gap-1.5 ml-auto md:ml-0"
+                  onClick={() => setActiveTab("quests")}
+                  className={`px-3.5 py-1.5 font-display font-black text-xs rounded-xl transition-all flex items-center gap-1.5 ${
+                    activeTab === "quests"
+                      ? "bg-[#FF6B8B] text-white border-2 border-slate-950 shadow-[2px_2px_0px_0px_#020617]"
+                      : "text-slate-600 hover:text-slate-950 border-2 border-transparent"
+                  }`}
                 >
-                  <Plus className="w-4 h-4" />
-                  <span>New Quest</span>
+                  <Sword className="w-3.5 h-3.5" />
+                  <span>Quests ({activeCount})</span>
+                </button>
+                <button
+                  onClick={() => setActiveTab("shop")}
+                  className={`px-3.5 py-1.5 font-display font-black text-xs rounded-xl transition-all flex items-center gap-1.5 ${
+                    activeTab === "shop"
+                      ? "bg-[#FFD166] text-slate-950 border-2 border-slate-950 shadow-[2px_2px_0px_0px_#020617]"
+                      : "text-slate-600 hover:text-slate-950 border-2 border-transparent"
+                  }`}
+                >
+                  <ShoppingBag className="w-3.5 h-3.5" />
+                  <span>Armory</span>
                 </button>
               </div>
             </div>
 
-            {/* ============================================================ */}
-            {/* 1. PRIORITY SECTION (ALWAYS ON TOP OF THE SCREEN)            */}
-            {/* ============================================================ */}
-            <div className="mt-5 p-4 sm:p-5 rounded-3xl border-3 border-slate-950 bg-[#FFF7ED] shadow-[4px_4px_0px_0px_#020617]">
-              <div className="flex items-center justify-between pb-3 border-b-2 border-orange-200/80 mb-3.5">
-                <div className="flex items-center gap-2.5">
-                  <div className="w-8 h-8 rounded-xl bg-[#FF5722] border-2 border-slate-950 flex items-center justify-center text-white shadow-[1.5px_1.5px_0px_0px_#020617]">
-                    <Zap className="w-4 h-4 fill-white" />
+            {/* Quests View Content */}
+            {activeTab === "quests" ? (
+              <section className="bg-white border-3 border-slate-950 rounded-3xl p-5 sm:p-6 shadow-[5px_5px_0px_0px_#020617] space-y-6">
+                {/* Category Filter + Add Quest Button */}
+                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 pb-4 border-b-2 border-slate-100">
+                  <div className="flex items-center bg-[#FDF8EE] p-1 rounded-2xl border-2 border-slate-950 overflow-x-auto text-xs font-display font-black w-full sm:w-auto">
+                    {(
+                      [
+                        { id: "ALL", label: "All" },
+                        { id: "fitness", label: "🥊 Brawn" },
+                        { id: "knowledge", label: "🧠 Intellect" },
+                        { id: "habits", label: "⚡ Swift" },
+                        { id: "wellness", label: "🌿 Vital" },
+                      ] as const
+                    ).map((cat) => (
+                      <button
+                        key={cat.id}
+                        onClick={() => setSelectedCategory(cat.id)}
+                        className={`px-2.5 py-1 rounded-xl transition-all ${
+                          selectedCategory === cat.id
+                            ? "bg-[#FF6B8B] text-white border-2 border-slate-950 shadow-[1px_1px_0px_0px_#020617]"
+                            : "text-slate-600 hover:text-slate-950"
+                        }`}
+                      >
+                        {cat.label}
+                      </button>
+                    ))}
                   </div>
-                  <div>
-                    <div className="flex items-center gap-2">
-                      <h3 className="font-display font-black text-base sm:text-lg text-slate-950">
-                        Priority Section
-                      </h3>
-                      <span className="bg-[#FF5722] text-white text-[10px] font-black px-2 py-0.5 rounded-full border border-slate-950">
-                        {priorityQuests.length} {priorityQuests.length === 1 ? "Quest" : "Quests"}
-                      </span>
-                    </div>
-                    <p className="text-[11px] font-bold text-slate-500">
-                      High priority objectives pinned to the top of the screen
-                    </p>
-                  </div>
-                </div>
-              </div>
 
-              {priorityQuests.length === 0 ? (
-                <div className="py-4 px-3 text-center bg-white/60 rounded-2xl border border-dashed border-orange-200">
-                  <p className="text-xs font-bold text-orange-950/60">
-                    No urgent priority tasks. Toggle &apos;High Priority&apos; when creating a quest to pin it here!
-                  </p>
-                </div>
-              ) : (
-                <div className="space-y-2.5">
-                  <AnimatePresence mode="popLayout">
-                    {priorityQuests.map((quest) => renderQuestCard(quest, true))}
-                  </AnimatePresence>
-                </div>
-              )}
-            </div>
-
-            {/* ============================================================ */}
-            {/* 2. RECURRING TASKS SECTION (REPEATS DAILY AFTER 00:00 IST)   */}
-            {/* ============================================================ */}
-            <div className="mt-5 p-4 sm:p-5 rounded-3xl border-3 border-slate-950 bg-[#F0FDF4] shadow-[4px_4px_0px_0px_#020617]">
-              <div className="flex items-center justify-between pb-3 border-b-2 border-emerald-200 mb-3.5">
-                <div className="flex items-center gap-2.5">
-                  <div className="w-8 h-8 rounded-xl bg-[#06D6A0] border-2 border-slate-950 flex items-center justify-center text-slate-950 shadow-[1.5px_1.5px_0px_0px_#020617]">
-                    <RotateCcw className="w-4 h-4 stroke-[3]" />
-                  </div>
-                  <div>
-                    <div className="flex items-center gap-2">
-                      <h3 className="font-display font-black text-base sm:text-lg text-slate-950">
-                        Recurring Tasks
-                      </h3>
-                      <span className="bg-[#059669] text-white text-[10px] font-black px-2 py-0.5 rounded-full border border-slate-950">
-                        Resets 00:00 IST
-                      </span>
-                    </div>
-                    <p className="text-[11px] font-bold text-slate-500">
-                      Daily rituals that automatically repeat every day after midnight Indian Time zone
-                    </p>
-                  </div>
-                </div>
-              </div>
-
-              {recurringQuests.length === 0 ? (
-                <div className="py-4 px-3 text-center bg-white/60 rounded-2xl border border-dashed border-emerald-200">
-                  <p className="text-xs font-bold text-emerald-950/60">
-                    No daily recurring tasks active. Toggle &apos;Recurring Task&apos; to build habits that repeat every day at 00:00 IST.
-                  </p>
-                </div>
-              ) : (
-                <div className="space-y-2.5">
-                  <AnimatePresence mode="popLayout">
-                    {recurringQuests.map((quest) => renderQuestCard(quest, false))}
-                  </AnimatePresence>
-                </div>
-              )}
-            </div>
-
-            {/* ============================================================ */}
-            {/* 3. STANDARD ACTIVE QUESTS SECTION                            */}
-            {/* ============================================================ */}
-            <div className="mt-6 space-y-3">
-              <div className="flex items-center justify-between pb-1">
-                <span className="text-xs font-display font-black tracking-wider uppercase text-slate-400">
-                  Standard Quests ({standardQuests.length})
-                </span>
-              </div>
-
-              {standardQuests.length === 0 && ongoingQuests.length === 0 ? (
-                <div className="text-center py-10 px-4 bg-[#FDF8EE] rounded-2xl border-2 border-dashed border-slate-300">
-                  <div className="text-4xl mb-2">{completedCount > 0 ? "🎉" : "🛡️"}</div>
-                  <h3 className="font-display font-black text-base sm:text-lg text-slate-800">
-                    {completedCount > 0
-                      ? "All Quests Conquered!"
-                      : "No Quests in this Category"}
-                  </h3>
-                  <p className="text-xs font-bold text-slate-500 mt-1 max-w-sm mx-auto">
-                    {completedCount > 0
-                      ? "Legendary work! You've finished all your active quests. Create a new quest to continue your journey."
-                      : "Take a well-deserved breather or forge a brand-new daily quest to gain more XP and Gold!"}
-                  </p>
                   <button
                     onClick={() => {
                       setFormError(null);
                       setModalOpen(true);
                     }}
-                    className="mt-4 px-4 py-2 bg-[#FF6B8B] text-white font-display font-black text-xs rounded-xl border-2 border-slate-950 shadow-[2px_2px_0px_0px_#020617] active:translate-x-[1px] active:translate-y-[1px] transition-all"
+                    className="px-4 py-2 bg-[#FFD166] hover:bg-[#fcc849] text-slate-950 font-display font-black text-xs sm:text-sm rounded-2xl border-2 border-slate-950 shadow-[3px_3px_0px_0px_#020617] active:translate-x-[1px] active:translate-y-[1px] active:shadow-[1px_1px_0px_0px_#020617] transition-all flex items-center gap-1.5 ml-auto sm:ml-0 cursor-pointer"
                   >
-                    + New Quest
+                    <Plus className="w-4 h-4" />
+                    <span>New Quest</span>
                   </button>
                 </div>
-              ) : standardQuests.length === 0 ? (
-                <div className="py-4 px-3 text-center bg-[#FDF8EE]/60 rounded-2xl border border-dashed border-slate-300">
-                  <p className="text-xs font-bold text-slate-400">
-                    No active standard quests. All ongoing tasks are organized in Priority or Recurring sections above!
-                  </p>
-                </div>
-              ) : (
-                <div className="space-y-2.5">
-                  <AnimatePresence mode="popLayout">
-                    {standardQuests.map((quest) => renderQuestCard(quest, false))}
-                  </AnimatePresence>
-                </div>
-              )}
-            </div>
 
-            {/* ============================================================ */}
-            {/* NEW SECTION: Completed tasks                                 */}
-            {/* ============================================================ */}
-            <div className="mt-8 pt-6 border-t-2 border-slate-100">
-              <div className="flex items-center justify-between mb-3.5">
-                <div className="flex items-center gap-2">
-                  <div className="w-6 h-6 rounded-lg bg-[#E8FAF5] border border-[#06D6A0] flex items-center justify-center text-[#06D6A0]">
-                    <Check className="w-3.5 h-3.5 stroke-[3]" />
-                  </div>
-                  <h3 className="font-display font-black text-base sm:text-lg text-slate-950 flex items-center gap-2">
-                    Completed tasks
-                    <span className="bg-[#E8FAF5] text-[#059669] border border-[#06D6A0] text-xs font-bold px-2 py-0.5 rounded-full">
-                      {completedQuests.length}
-                    </span>
-                  </h3>
-                </div>
-
-                {completedQuests.length > 0 && (
-                  <button
-                    onClick={() => setShowCompleted(!showCompleted)}
-                    className="flex items-center gap-1.5 text-xs font-display font-bold text-slate-600 hover:text-slate-950 bg-[#FDF8EE] hover:bg-amber-100 border border-slate-950 px-2.5 py-1 rounded-xl shadow-[1px_1px_0px_0px_#020617] active:translate-x-[0.5px] active:translate-y-[0.5px] transition-all"
-                  >
-                    <span>{showCompleted ? "Hide" : "Show"}</span>
-                    <ChevronDown
-                      className={`w-3.5 h-3.5 transition-transform duration-200 ${
-                        showCompleted ? "rotate-180" : ""
-                      }`}
-                    />
-                  </button>
-                )}
-              </div>
-
-              {completedQuests.length === 0 ? (
-                <div className="py-6 px-4 text-center bg-[#FDF8EE]/60 rounded-2xl border border-dashed border-slate-300">
-                  <p className="text-xs font-bold text-slate-400">
-                    No completed tasks yet. Finish an active quest above to earn XP &amp; Gold and see it archived here!
-                  </p>
-                </div>
-              ) : (
-                showCompleted && (
-                  <div className="space-y-2.5">
-                    <AnimatePresence mode="popLayout">
-                      {completedQuests.map((quest) => {
-                        const cfg = ATTRIBUTE_CONFIG[quest.attribute];
-                        return (
-                          <motion.div
-                            key={quest.id}
-                            layout
-                            initial={{ opacity: 0, scale: 0.95 }}
-                            animate={{ opacity: 1, scale: 1 }}
-                            exit={{ opacity: 0, scale: 0.95, transition: { duration: 0.2 } }}
-                            className="p-3 sm:p-3.5 rounded-2xl border-2 border-slate-200 bg-slate-50/90 hover:bg-slate-50 transition-all flex items-center justify-between gap-3"
-                          >
-                            {/* Left: Revert checkbox + Title */}
-                            <div className="flex items-center gap-3 min-w-0">
-                              <button
-                                onClick={() => handleToggle(quest.id)}
-                                className="w-6 h-6 shrink-0 rounded-lg bg-[#06D6A0] border-2 border-slate-950 text-slate-950 flex items-center justify-center hover:bg-[#FFEAEF] hover:text-[#FF6B8B] transition-all group"
-                                title="Click to reactivate quest"
-                              >
-                                <Check className="w-3.5 h-3.5 stroke-[3] group-hover:hidden" />
-                                <X className="w-3.5 h-3.5 stroke-[3] hidden group-hover:block" />
-                              </button>
-
-                              <div className="min-w-0">
-                                <div className="flex items-center gap-2 flex-wrap">
-                                  <span
-                                    className={`text-[9px] font-display font-black px-1.5 py-0.5 rounded border flex items-center gap-1 ${cfg.bg} ${cfg.border} text-slate-700 opacity-80`}
-                                  >
-                                    <span>{cfg.icon}</span>
-                                    <span>{quest.attribute}</span>
-                                  </span>
-                                  <span className="text-[10px] font-bold text-[#059669] flex items-center gap-0.5">
-                                    <CheckCircle2 className="w-3 h-3" />
-                                    Completed
-                                  </span>
-                                  {quest.is_priority && (
-                                    <span className="text-[9px] font-display font-black px-1.5 py-0.5 rounded border bg-[#FFEAEF] text-[#FF5722] border-[#FF5722]/50 flex items-center gap-0.5">
-                                      <Zap className="w-2.5 h-2.5 fill-[#FF5722]" />
-                                      <span>Priority</span>
-                                    </span>
-                                  )}
-                                  {quest.is_recurring && (
-                                    <span className="text-[9px] font-display font-black px-1.5 py-0.5 rounded border bg-[#F0FDF4] text-[#059669] border-[#06D6A0]/50 flex items-center gap-0.5">
-                                      <RotateCcw className="w-2.5 h-2.5" />
-                                      <span>00:00 IST</span>
-                                    </span>
-                                  )}
-                                </div>
-                                <div className="font-display font-medium text-xs sm:text-sm text-slate-400 line-through truncate mt-0.5">
-                                  {quest.title}
-                                </div>
-                              </div>
-                            </div>
-
-                            {/* Right: Reward earned tags + delete */}
-                            <div className="flex items-center gap-2 shrink-0">
-                              <span className="hidden sm:inline-flex items-center gap-1 bg-[#E8FAF5] text-[#059669] text-[11px] font-display font-bold px-2 py-0.5 rounded-lg border border-[#06D6A0]/40">
-                                +{quest.xp_reward} XP
-                              </span>
-                              <span className="hidden sm:inline-flex items-center gap-1 bg-[#FFF9DB] text-[#B45309] text-[11px] font-display font-bold px-2 py-0.5 rounded-lg border border-[#F59E0B]/40">
-                                +{quest.gold_reward} Gold
-                              </span>
-
-                              <button
-                                onClick={() => deleteQuest(quest.id)}
-                                className="p-1.5 text-slate-300 hover:text-[#FF6B8B] hover:bg-[#FFEAEF] rounded-lg border border-transparent hover:border-[#FF6B8B] transition-all"
-                                title="Delete Quest"
-                              >
-                                <Trash2 className="w-3.5 h-3.5" />
-                              </button>
-                            </div>
-                          </motion.div>
-                        );
-                      })}
-                    </AnimatePresence>
-                  </div>
-                )
-              )}
-            </div>
-          </section>
-        ) : (
-          /* ============================================================ */
-          /* 5. SHOP / ARMORY & REWARD VAULT                              */
-          /* ============================================================ */
-          <section className="bg-white border-3 border-slate-950 rounded-3xl p-5 sm:p-6 shadow-[5px_5px_0px_0px_#020617]">
-            <div className="pb-4 border-b-2 border-slate-100 flex items-center justify-between">
-              <div>
-                <h2 className="font-display font-black text-xl sm:text-2xl text-slate-950">
-                  Armory &amp; Rewards Vault
-                </h2>
-                <p className="text-xs font-bold text-slate-500 mt-0.5">
-                  Convert your hard-earned quest gold into real-life treats, perks, and badges.
-                </p>
-              </div>
-              <div className="flex items-center gap-1.5 bg-[#FFF9DB] text-[#B45309] px-3 py-1.5 rounded-2xl border-2 border-slate-950 shadow-[2px_2px_0px_0px_#020617]">
-                <Coins className="w-4 h-4" />
-                <span className="font-display font-black text-sm text-slate-950">
-                  {profile.gold} Gold Available
-                </span>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mt-5">
-              {SHOP_REWARDS.map((reward) => {
-                const isOwned = unlockedRewards.includes(reward.id);
-                const canAfford = profile.gold >= reward.cost;
-
-                return (
-                  <div
-                    key={reward.id}
-                    className="bg-[#FDF8EE] border-2 border-slate-950 rounded-2xl p-4 shadow-[3px_3px_0px_0px_#020617] flex flex-col justify-between"
-                  >
-                    <div>
-                      <div className="flex items-center justify-between mb-2">
-                        <span className="text-3xl">{reward.icon}</span>
-                        <span className="font-display font-black text-xs px-2.5 py-1 bg-white border-2 border-slate-950 rounded-xl shadow-[1px_1px_0px_0px_#020617]">
-                          🪙 {reward.cost} Gold
-                        </span>
+                {/* ============================================================ */}
+                {/* 1. PRIORITY SECTION (ALWAYS ON TOP OF THE SCREEN)            */}
+                {/* ============================================================ */}
+                <div className="p-4 sm:p-5 rounded-3xl border-3 border-slate-950 bg-[#FFF7ED] shadow-[4px_4px_0px_0px_#020617]">
+                  <div className="flex items-center justify-between pb-3 border-b-2 border-orange-200/80 mb-3.5">
+                    <div className="flex items-center gap-2.5">
+                      <div className="w-8 h-8 rounded-xl bg-[#FF5722] border-2 border-slate-950 flex items-center justify-center text-white shadow-[1.5px_1.5px_0px_0px_#020617]">
+                        <Zap className="w-4 h-4 fill-white" />
                       </div>
-                      <h3 className="font-display font-black text-base text-slate-950">
-                        {reward.title}
-                      </h3>
-                      <p className="text-xs font-semibold text-slate-600 mt-1">
-                        {reward.description}
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <h3 className="font-display font-black text-base sm:text-lg text-slate-950">
+                            Priority Section
+                          </h3>
+                          <span className="bg-[#FF5722] text-white text-[10px] font-black px-2 py-0.5 rounded-full border border-slate-950">
+                            {priorityQuests.length} {priorityQuests.length === 1 ? "Quest" : "Quests"}
+                          </span>
+                        </div>
+                        <p className="text-[11px] font-bold text-slate-500">
+                          High priority objectives pinned to the top of the screen
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
+                  {priorityQuests.length === 0 ? (
+                    <div className="py-4 px-3 text-center bg-white/60 rounded-2xl border border-dashed border-orange-200">
+                      <p className="text-xs font-bold text-orange-950/60">
+                        No urgent priority tasks. Toggle &apos;High Priority&apos; when creating a quest to pin it here!
                       </p>
                     </div>
+                  ) : (
+                    <div className="space-y-2.5">
+                      <AnimatePresence mode="popLayout">
+                        {priorityQuests.map((quest) => renderQuestCard(quest, true))}
+                      </AnimatePresence>
+                    </div>
+                  )}
+                </div>
 
-                    <div className="mt-4 pt-3 border-t border-slate-200">
-                      {isOwned ? (
-                        <div className="w-full py-2 bg-[#E8FAF5] text-[#065f46] font-display font-black text-xs rounded-xl border border-[#06D6A0] flex items-center justify-center gap-1.5">
-                          <CheckCircle2 className="w-4 h-4 text-[#06D6A0]" />
-                          <span>Claimed / In Inventory</span>
+                {/* ============================================================ */}
+                {/* 2. RECURRING TASKS SECTION (REPEATS DAILY AFTER 00:00 IST)   */}
+                {/* ============================================================ */}
+                <div className="p-4 sm:p-5 rounded-3xl border-3 border-slate-950 bg-[#F0FDF4] shadow-[4px_4px_0px_0px_#020617]">
+                  <div className="flex items-center justify-between pb-3 border-b-2 border-emerald-200 mb-3.5">
+                    <div className="flex items-center gap-2.5">
+                      <div className="w-8 h-8 rounded-xl bg-[#06D6A0] border-2 border-slate-950 flex items-center justify-center text-slate-950 shadow-[1.5px_1.5px_0px_0px_#020617]">
+                        <RotateCcw className="w-4 h-4 stroke-[3]" />
+                      </div>
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <h3 className="font-display font-black text-base sm:text-lg text-slate-950">
+                            Recurring Tasks
+                          </h3>
+                          <span className="bg-[#059669] text-white text-[10px] font-black px-2 py-0.5 rounded-full border border-slate-950">
+                            Resets 00:00 IST
+                          </span>
                         </div>
-                      ) : (
-                        <button
-                          onClick={() => purchaseReward(reward)}
-                          disabled={!canAfford}
-                          className={`w-full py-2 font-display font-black text-xs rounded-xl border-2 border-slate-950 transition-all ${
-                            canAfford
-                              ? "bg-[#FFD166] hover:bg-[#fcc849] text-slate-950 shadow-[2px_2px_0px_0px_#020617] active:translate-x-[1px] active:translate-y-[1px]"
-                              : "bg-slate-200 text-slate-400 cursor-not-allowed border-slate-300"
-                          }`}
-                        >
-                          {canAfford ? `Unlock for ${reward.cost} Gold` : "Need More Gold"}
-                        </button>
-                      )}
+                        <p className="text-[11px] font-bold text-slate-500">
+                          Daily rituals that automatically repeat every day after midnight Indian Time zone
+                        </p>
+                      </div>
                     </div>
                   </div>
-                );
-              })}
-            </div>
-          </section>
-        )}
+
+                  {recurringQuests.length === 0 ? (
+                    <div className="py-4 px-3 text-center bg-white/60 rounded-2xl border border-dashed border-emerald-200">
+                      <p className="text-xs font-bold text-emerald-950/60">
+                        No daily recurring tasks active. Toggle &apos;Recurring Task&apos; to build habits that repeat every day at 00:00 IST.
+                      </p>
+                    </div>
+                  ) : (
+                    <div className="space-y-2.5">
+                      <AnimatePresence mode="popLayout">
+                        {recurringQuests.map((quest) => renderQuestCard(quest, false))}
+                      </AnimatePresence>
+                    </div>
+                  )}
+                </div>
+
+                {/* ============================================================ */}
+                {/* 3. STANDARD ACTIVE QUESTS SECTION                            */}
+                {/* ============================================================ */}
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between pb-1">
+                    <span className="text-xs font-display font-black tracking-wider uppercase text-slate-400">
+                      Standard Quests ({standardQuests.length})
+                    </span>
+                  </div>
+
+                  {standardQuests.length === 0 && ongoingQuests.length === 0 ? (
+                    <div className="text-center py-10 px-4 bg-[#FDF8EE] rounded-2xl border-2 border-dashed border-slate-300">
+                      <div className="text-4xl mb-2">{completedCount > 0 ? "🎉" : "🛡️"}</div>
+                      <h3 className="font-display font-black text-base sm:text-lg text-slate-800">
+                        {completedCount > 0
+                          ? "All Quests Conquered!"
+                          : "No Quests in this Category"}
+                      </h3>
+                      <p className="text-xs font-bold text-slate-500 mt-1 max-w-sm mx-auto">
+                        {completedCount > 0
+                          ? "Legendary work! You've finished all your active quests. Create a new quest to continue your journey."
+                          : "Take a well-deserved breather or forge a brand-new daily quest to gain more XP and Gold!"}
+                      </p>
+                      <button
+                        onClick={() => {
+                          setFormError(null);
+                          setModalOpen(true);
+                        }}
+                        className="mt-4 px-4 py-2 bg-[#FF6B8B] text-white font-display font-black text-xs rounded-xl border-2 border-slate-950 shadow-[2px_2px_0px_0px_#020617] active:translate-x-[1px] active:translate-y-[1px] transition-all cursor-pointer"
+                      >
+                        + New Quest
+                      </button>
+                    </div>
+                  ) : standardQuests.length === 0 ? (
+                    <div className="py-4 px-3 text-center bg-[#FDF8EE]/60 rounded-2xl border border-dashed border-slate-300">
+                      <p className="text-xs font-bold text-slate-400">
+                        No active standard quests. All ongoing tasks are organized in Priority or Recurring sections above!
+                      </p>
+                    </div>
+                  ) : (
+                    <div className="space-y-2.5">
+                      <AnimatePresence mode="popLayout">
+                        {standardQuests.map((quest) => renderQuestCard(quest, false))}
+                      </AnimatePresence>
+                    </div>
+                  )}
+                </div>
+
+                {/* ============================================================ */}
+                {/* 4. COMPLETED TASKS SECTION                                   */}
+                {/* ============================================================ */}
+                <div className="pt-6 border-t-2 border-slate-100">
+                  <div className="flex items-center justify-between mb-3.5">
+                    <div className="flex items-center gap-2">
+                      <div className="w-6 h-6 rounded-lg bg-[#E8FAF5] border border-[#06D6A0] flex items-center justify-center text-[#06D6A0]">
+                        <Check className="w-3.5 h-3.5 stroke-[3]" />
+                      </div>
+                      <h3 className="font-display font-black text-base sm:text-lg text-slate-950 flex items-center gap-2">
+                        Completed tasks
+                        <span className="bg-[#E8FAF5] text-[#059669] border border-[#06D6A0] text-xs font-bold px-2 py-0.5 rounded-full">
+                          {completedQuests.length}
+                        </span>
+                      </h3>
+                    </div>
+
+                    {completedQuests.length > 0 && (
+                      <button
+                        onClick={() => setShowCompleted(!showCompleted)}
+                        className="flex items-center gap-1.5 text-xs font-display font-bold text-slate-600 hover:text-slate-950 bg-[#FDF8EE] hover:bg-amber-100 border border-slate-950 px-2.5 py-1 rounded-xl shadow-[1px_1px_0px_0px_#020617] active:translate-x-[0.5px] active:translate-y-[0.5px] transition-all cursor-pointer"
+                      >
+                        <span>{showCompleted ? "Hide" : "Show"}</span>
+                        <ChevronDown
+                          className={`w-3.5 h-3.5 transition-transform duration-200 ${
+                            showCompleted ? "rotate-180" : ""
+                          }`}
+                        />
+                      </button>
+                    )}
+                  </div>
+
+                  {completedQuests.length === 0 ? (
+                    <div className="py-6 px-4 text-center bg-[#FDF8EE]/60 rounded-2xl border border-dashed border-slate-300">
+                      <p className="text-xs font-bold text-slate-400">
+                        No completed tasks yet. Finish an active quest above to earn XP &amp; Gold and see it archived here!
+                      </p>
+                    </div>
+                  ) : (
+                    showCompleted && (
+                      <div className="space-y-2.5">
+                        <AnimatePresence mode="popLayout">
+                          {completedQuests.map((quest) => {
+                            const cfg = ATTRIBUTE_CONFIG[quest.attribute];
+                            return (
+                              <motion.div
+                                key={quest.id}
+                                layout
+                                initial={{ opacity: 0, scale: 0.95 }}
+                                animate={{ opacity: 1, scale: 1 }}
+                                exit={{ opacity: 0, scale: 0.95, transition: { duration: 0.2 } }}
+                                className="p-3 sm:p-3.5 rounded-2xl border-2 border-slate-200 bg-slate-50/90 hover:bg-slate-50 transition-all flex items-center justify-between gap-3"
+                              >
+                                {/* Left: Revert checkbox + Title */}
+                                <div className="flex items-center gap-3 min-w-0">
+                                  <button
+                                    onClick={() => handleToggle(quest.id)}
+                                    className="w-6 h-6 shrink-0 rounded-lg bg-[#06D6A0] border-2 border-slate-950 text-slate-950 flex items-center justify-center hover:bg-[#FFEAEF] hover:text-[#FF6B8B] transition-all group cursor-pointer"
+                                    title="Click to reactivate quest"
+                                  >
+                                    <Check className="w-3.5 h-3.5 stroke-[3] group-hover:hidden" />
+                                    <X className="w-3.5 h-3.5 stroke-[3] hidden group-hover:block" />
+                                  </button>
+
+                                  <div className="min-w-0">
+                                    <div className="flex items-center gap-2 flex-wrap">
+                                      <span
+                                        className={`text-[9px] font-display font-black px-1.5 py-0.5 rounded border flex items-center gap-1 ${cfg.bg} ${cfg.border} text-slate-700 opacity-80`}
+                                      >
+                                        <span>{cfg.icon}</span>
+                                        <span>{quest.attribute}</span>
+                                      </span>
+                                      <span className="text-[10px] font-bold text-[#059669] flex items-center gap-0.5">
+                                        <CheckCircle2 className="w-3 h-3" />
+                                        Completed
+                                      </span>
+                                      {quest.is_priority && (
+                                        <span className="text-[9px] font-display font-black px-1.5 py-0.5 rounded border bg-[#FFEAEF] text-[#FF5722] border-[#FF5722]/50 flex items-center gap-0.5">
+                                          <Zap className="w-2.5 h-2.5 fill-[#FF5722]" />
+                                          <span>Priority</span>
+                                        </span>
+                                      )}
+                                      {quest.is_recurring && (
+                                        <span className="text-[9px] font-display font-black px-1.5 py-0.5 rounded border bg-[#F0FDF4] text-[#059669] border-[#06D6A0]/50 flex items-center gap-0.5">
+                                          <RotateCcw className="w-2.5 h-2.5" />
+                                          <span>00:00 IST</span>
+                                        </span>
+                                      )}
+                                    </div>
+                                    <div className="font-display font-medium text-xs sm:text-sm text-slate-400 line-through truncate mt-0.5">
+                                      {quest.title}
+                                    </div>
+                                  </div>
+                                </div>
+
+                                {/* Right: Reward earned tags + delete */}
+                                <div className="flex items-center gap-2 shrink-0">
+                                  <span className="hidden sm:inline-flex items-center gap-1 bg-[#E8FAF5] text-[#059669] text-[11px] font-display font-bold px-2 py-0.5 rounded-lg border border-[#06D6A0]/40">
+                                    +{quest.xp_reward} XP
+                                  </span>
+                                  <span className="hidden sm:inline-flex items-center gap-1 bg-[#FFF9DB] text-[#B45309] text-[11px] font-display font-bold px-2 py-0.5 rounded-lg border border-[#F59E0B]/40">
+                                    +{quest.gold_reward} Gold
+                                  </span>
+
+                                  <button
+                                    onClick={() => deleteQuest(quest.id)}
+                                    className="p-1.5 text-slate-300 hover:text-[#FF6B8B] hover:bg-[#FFEAEF] rounded-lg border border-transparent hover:border-[#FF6B8B] transition-all cursor-pointer"
+                                    title="Delete Quest"
+                                  >
+                                    <Trash2 className="w-3.5 h-3.5" />
+                                  </button>
+                                </div>
+                              </motion.div>
+                            );
+                          })}
+                        </AnimatePresence>
+                      </div>
+                    )
+                  )}
+                </div>
+              </section>
+            ) : (
+              /* ============================================================ */
+              /* ARMORY & REWARDS VAULT                                       */
+              /* ============================================================ */
+              <section className="bg-white border-3 border-slate-950 rounded-3xl p-5 sm:p-6 shadow-[5px_5px_0px_0px_#020617]">
+                <div className="pb-4 border-b-2 border-slate-100 flex items-center justify-between">
+                  <div>
+                    <h2 className="font-display font-black text-xl sm:text-2xl text-slate-950">
+                      Armory &amp; Rewards Vault
+                    </h2>
+                    <p className="text-xs font-bold text-slate-500 mt-0.5">
+                      Convert your hard-earned quest gold into real-life treats, perks, and badges.
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-1.5 bg-[#FFF9DB] text-[#B45309] px-3 py-1.5 rounded-2xl border-2 border-slate-950 shadow-[2px_2px_0px_0px_#020617]">
+                    <Coins className="w-4 h-4" />
+                    <span className="font-display font-black text-sm text-slate-950">
+                      {profile.gold} Gold
+                    </span>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-5">
+                  {SHOP_REWARDS.map((reward) => {
+                    const isOwned = unlockedRewards.includes(reward.id);
+                    const canAfford = profile.gold >= reward.cost;
+
+                    return (
+                      <div
+                        key={reward.id}
+                        className="bg-[#FDF8EE] border-2 border-slate-950 rounded-2xl p-4 shadow-[3px_3px_0px_0px_#020617] flex flex-col justify-between"
+                      >
+                        <div>
+                          <div className="flex items-center justify-between mb-2">
+                            <span className="text-3xl">{reward.icon}</span>
+                            <span className="font-display font-black text-xs px-2.5 py-1 bg-white border-2 border-slate-950 rounded-xl shadow-[1px_1px_0px_0px_#020617]">
+                              🪙 {reward.cost} Gold
+                            </span>
+                          </div>
+                          <h3 className="font-display font-black text-base text-slate-950">
+                            {reward.title}
+                          </h3>
+                          <p className="text-xs font-semibold text-slate-600 mt-1">
+                            {reward.description}
+                          </p>
+                        </div>
+
+                        <div className="mt-4 pt-3 border-t border-slate-200">
+                          {isOwned ? (
+                            <div className="w-full py-2 bg-[#E8FAF5] text-[#065f46] font-display font-black text-xs rounded-xl border border-[#06D6A0] flex items-center justify-center gap-1.5">
+                              <CheckCircle2 className="w-4 h-4 text-[#06D6A0]" />
+                              <span>Claimed / In Inventory</span>
+                            </div>
+                          ) : (
+                            <button
+                              onClick={() => purchaseReward(reward)}
+                              disabled={!canAfford}
+                              className={`w-full py-2 font-display font-black text-xs rounded-xl border-2 border-slate-950 transition-all ${
+                                canAfford
+                                  ? "bg-[#FFD166] hover:bg-[#fcc849] text-slate-950 shadow-[2px_2px_0px_0px_#020617] active:translate-x-[1px] active:translate-y-[1px] cursor-pointer"
+                                  : "bg-slate-200 text-slate-400 cursor-not-allowed border-slate-300"
+                              }`}
+                            >
+                              {canAfford ? `Unlock for ${reward.cost} Gold` : "Need More Gold"}
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </section>
+            )}
+          </div>
+        </div>
       </main>
 
       {/* ============================================================ */}

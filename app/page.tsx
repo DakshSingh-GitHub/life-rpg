@@ -139,26 +139,33 @@ export default function LandingPage() {
       {/* ============================================================ */}
       {/* 1. PLAYFUL COMIC NAVBAR WITH LOGIN / SIGNUP BUTTONS          */}
       {/* ============================================================ */}
-      <header className="relative z-40 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-4 sm:pt-6">
-        <nav className="bg-white border-3 border-slate-950 rounded-3xl px-4 sm:px-6 py-3 shadow-[5px_5px_0px_0px_#020617] flex items-center justify-between transition-all">
+      <header className="sticky top-3 sm:top-4 z-40 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pointer-events-none">
+        <div className="relative pointer-events-auto">
+          {/* Glassmorphism precursor: starts 20px (-bottom-5 = 20px) before body content scrolls behind the navbar */}
+          <div
+            aria-hidden="true"
+            className="pointer-events-none absolute -inset-x-2 -top-2 -bottom-5 rounded-full backdrop-blur-[6px] [mask-image:linear-gradient(to_bottom,black_60%,transparent_100%)] -z-10"
+          />
+
+          <nav className="bg-white/70 backdrop-blur-xl border-3 border-slate-950 rounded-full px-4 sm:px-6 py-2.5 sm:py-3 shadow-[4px_4px_0px_0px_#020617] ring-1 ring-white/80 flex items-center justify-between transition-all">
           {/* Brand Logo */}
           <Link
             href="/"
-            className="flex items-center gap-3 group focus:outline-none focus:ring-2 focus:ring-[#FF6B8B] rounded-2xl p-1"
+            className="flex items-center gap-2.5 group focus:outline-none focus:ring-2 focus:ring-[#FF6B8B] rounded-full p-1"
           >
-            <div className="w-11 h-11 rounded-2xl bg-[#FF6B8B] border-3 border-slate-950 flex items-center justify-center shadow-[3px_3px_0px_0px_#020617] group-hover:rotate-6 transition-transform">
-              <Sword className="w-6 h-6 text-white stroke-[2.5]" />
+            <div className="w-10 h-10 rounded-full bg-[#FF6B8B] border-3 border-slate-950 flex items-center justify-center shadow-[2px_2px_0px_0px_#020617] group-hover:rotate-6 transition-transform">
+              <Sword className="w-5 h-5 text-white stroke-[2.5]" />
             </div>
             <div className="flex flex-col">
               <div className="flex items-center gap-2">
-                <span className="font-display font-black text-2xl tracking-tight text-slate-950">
+                <span className="font-display font-black text-xl sm:text-2xl tracking-tight text-slate-950">
                   Life<span className="text-[#FF6B8B]">RPG</span>
                 </span>
                 <span className="bg-[#FFD166] text-slate-950 text-[10px] font-black uppercase px-2 py-0.5 rounded-full border-2 border-slate-950 shadow-[1px_1px_0px_0px_#020617]">
                   Official
                 </span>
               </div>
-              <span className="text-[11px] font-extrabold text-slate-500 uppercase tracking-wider hidden sm:block">
+              <span className="text-[10px] font-extrabold text-slate-500 uppercase tracking-wider hidden sm:block">
                 Gamified Habit &amp; Goal Platform
               </span>
             </div>
@@ -175,7 +182,7 @@ export default function LandingPage() {
               <a
                 key={link.label}
                 href={link.href}
-                className="px-4 py-2 font-display font-bold text-sm text-slate-700 hover:text-slate-950 hover:bg-[#FDF8EE] rounded-2xl border-2 border-transparent hover:border-slate-950 transition-all hover:shadow-[3px_3px_0px_0px_#020617]"
+                className="px-3.5 py-1.5 font-display font-bold text-sm text-slate-700 hover:text-slate-950 hover:bg-[#FDF8EE] rounded-full border-2 border-transparent hover:border-slate-950 transition-all hover:shadow-[2px_2px_0px_0px_#020617]"
               >
                 {link.label}
               </a>
@@ -187,7 +194,7 @@ export default function LandingPage() {
             {user ? (
               <Link
                 href="/dashboard"
-                className="relative inline-flex items-center justify-center gap-2 px-5 py-2.5 bg-[#06D6A0] hover:bg-[#05b88a] text-slate-950 font-display font-black text-sm sm:text-base rounded-2xl border-3 border-slate-950 shadow-[4px_4px_0px_0px_#020617] active:translate-x-[2px] active:translate-y-[2px] active:shadow-[2px_2px_0px_0px_#020617] transition-all"
+                className="relative inline-flex items-center justify-center gap-2 px-5 py-2 bg-[#06D6A0] hover:bg-[#05b88a] text-slate-950 font-display font-black text-xs sm:text-sm rounded-full border-3 border-slate-950 shadow-[3px_3px_0px_0px_#020617] active:translate-x-[1px] active:translate-y-[1px] active:shadow-[1px_1px_0px_0px_#020617] transition-all cursor-pointer"
               >
                 <Shield className="w-4 h-4" />
                 <span>My Dashboard</span>
@@ -197,7 +204,7 @@ export default function LandingPage() {
                 {/* Log In Button */}
                 <Link
                   href="/login?mode=login"
-                  className="px-4 py-2.5 bg-white hover:bg-[#FFFDF7] text-slate-900 font-display font-bold text-sm sm:text-base rounded-2xl border-3 border-slate-950 shadow-[3px_3px_0px_0px_#020617] active:translate-x-[2px] active:translate-y-[2px] active:shadow-[1px_1px_0px_0px_#020617] transition-all"
+                  className="px-4 py-2 bg-white hover:bg-[#FFFDF7] text-slate-900 font-display font-bold text-xs sm:text-sm rounded-full border-2 border-slate-950 shadow-[2px_2px_0px_0px_#020617] active:translate-x-[1px] active:translate-y-[1px] transition-all cursor-pointer"
                 >
                   Log In
                 </Link>
@@ -205,9 +212,9 @@ export default function LandingPage() {
                 {/* Sign Up Button */}
                 <Link
                   href="/login?mode=signup"
-                  className="relative inline-flex items-center justify-center gap-2 px-5 py-2.5 bg-[#FF6B8B] hover:bg-[#ff5779] text-white font-display font-black text-sm sm:text-base rounded-2xl border-3 border-slate-950 shadow-[4px_4px_0px_0px_#020617] active:translate-x-[2px] active:translate-y-[2px] active:shadow-[2px_2px_0px_0px_#020617] transition-all"
+                  className="relative inline-flex items-center justify-center gap-1.5 px-4 sm:px-5 py-2 bg-[#FF6B8B] hover:bg-[#ff5779] text-white font-display font-black text-xs sm:text-sm rounded-full border-2 border-slate-950 shadow-[3px_3px_0px_0px_#020617] active:translate-x-[1px] active:translate-y-[1px] transition-all cursor-pointer"
                 >
-                  <Sparkles className="w-4 h-4 fill-white" />
+                  <Sparkles className="w-3.5 h-3.5 fill-white" />
                   <span>Sign Up Free</span>
                 </Link>
               </>
@@ -216,10 +223,10 @@ export default function LandingPage() {
             {/* Mobile Menu Toggle */}
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="md:hidden p-2 rounded-2xl bg-[#FEF3C7] border-3 border-slate-950 shadow-[3px_3px_0px_0px_#020617] active:translate-x-[1px] active:translate-y-[1px]"
+              className="md:hidden p-2 rounded-full bg-[#FEF3C7] border-2 border-slate-950 shadow-[2px_2px_0px_0px_#020617] active:translate-x-[1px] active:translate-y-[1px] cursor-pointer"
               aria-label="Toggle Navigation Menu"
             >
-              {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+              {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
             </button>
           </div>
         </nav>
@@ -280,6 +287,7 @@ export default function LandingPage() {
             </motion.div>
           )}
         </AnimatePresence>
+        </div>
       </header>
 
       {/* ============================================================ */}
