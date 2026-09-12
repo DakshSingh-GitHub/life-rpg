@@ -52,20 +52,21 @@ export default function SettingsPage() {
             className="pointer-events-none absolute -inset-x-2 -top-2 -bottom-5 rounded-full backdrop-blur-[6px] [mask-image:linear-gradient(to_bottom,black_60%,transparent_100%)] -z-10"
           />
 
-          <nav className="bg-white/70 backdrop-blur-xl border-3 border-slate-950 rounded-full px-4 sm:px-6 py-2.5 shadow-[4px_4px_0px_0px_#020617] ring-1 ring-white/80 flex items-center justify-between gap-3 transition-all">
-            <div className="flex items-center gap-3">
+          <nav className="bg-white/85 backdrop-blur-xl border-3 border-slate-950 rounded-full px-2.5 sm:px-6 py-2 sm:py-2.5 shadow-[3px_3px_0px_0px_#020617] sm:shadow-[4px_4px_0px_0px_#020617] ring-1 ring-white/80 flex items-center justify-between gap-1.5 sm:gap-3 transition-all">
+            <div className="flex items-center gap-1.5 sm:gap-3 shrink-0">
               <Link
                 href="/dashboard"
-                className="flex items-center gap-1.5 text-xs font-display font-black px-3.5 py-1.5 bg-[#FDF8EE] hover:bg-[#FFEAEF] border-2 border-slate-950 rounded-full shadow-[2px_2px_0px_0px_#020617] active:translate-x-[1px] active:translate-y-[1px] transition-all cursor-pointer"
+                className="flex items-center gap-1.5 text-xs font-display font-black px-2.5 sm:px-3.5 py-1 sm:py-1.5 bg-[#FDF8EE] hover:bg-[#FFEAEF] border-2 border-slate-950 rounded-full shadow-[1.5px_1.5px_0px_0px_#020617] sm:shadow-[2px_2px_0px_0px_#020617] active:translate-x-[1px] active:translate-y-[1px] transition-all cursor-pointer"
               >
-                <ArrowLeft className="w-4 h-4" />
-                <span>Back to Dashboard</span>
+                <ArrowLeft className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                <span className="hidden sm:inline">Back to Dashboard</span>
+                <span className="sm:hidden">Dashboard</span>
               </Link>
             </div>
 
-            <div className="flex items-center gap-2 sm:gap-3">
+            <div className="flex items-center gap-1.5 sm:gap-3 shrink-0">
               <div
-                className={`flex items-center gap-1 px-3 py-1.5 rounded-full border-2 border-slate-950 text-xs font-display font-black shadow-[1px_1px_0px_0px_#020617] ${
+                className={`flex items-center gap-1 px-2 sm:px-3 py-1 sm:py-1.5 rounded-full border-2 border-slate-950 text-xs font-display font-black shadow-[1px_1px_0px_0px_#020617] ${
                   profile.streak_days > 0 ? "bg-[#FFF0E6] text-[#FF5722]" : "bg-slate-100 text-slate-500"
                 }`}
               >
@@ -74,11 +75,11 @@ export default function SettingsPage() {
                     profile.streak_days > 0 ? "fill-[#FF5722] text-[#FF5722]" : "text-slate-400"
                   }`}
                 />
-                <span>{profile.streak_days}d Streak</span>
+                <span className="whitespace-nowrap">{profile.streak_days}d<span className="hidden sm:inline"> Streak</span></span>
               </div>
-              <div className="flex items-center gap-1 px-3 py-1.5 bg-[#FFF9DB] text-[#B45309] rounded-full border-2 border-slate-950 text-xs font-display font-black shadow-[1px_1px_0px_0px_#020617]">
+              <div className="flex items-center gap-1 px-2 sm:px-3 py-1 sm:py-1.5 bg-[#FFF9DB] text-[#B45309] rounded-full border-2 border-slate-950 text-xs font-display font-black shadow-[1px_1px_0px_0px_#020617]">
                 <Coins className="w-3.5 h-3.5 text-[#F59E0B]" />
-                <span>{profile.gold} Gold</span>
+                <span className="whitespace-nowrap">{profile.gold}<span className="hidden sm:inline"> Gold</span></span>
               </div>
             </div>
           </nav>

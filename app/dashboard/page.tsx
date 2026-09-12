@@ -447,31 +447,31 @@ export default function DashboardPage() {
         initial={{ y: -25, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
         transition={{ ...SPRING_CONFIGS.tabletopDrop, delay: 0.05 }}
-        className="fixed top-3 sm:top-4 left-0 right-0 z-40 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pointer-events-none"
+        className="fixed top-2.5 sm:top-4 left-0 right-0 z-40 max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 pointer-events-none"
       >
         <div className="relative pointer-events-auto">
-          <nav className="bg-white/85 backdrop-blur-md border-3 border-slate-950 rounded-full px-3.5 sm:px-6 py-2.5 shadow-[4px_4px_0px_0px_#020617] ring-1 ring-white/80 flex items-center justify-between gap-2.5 transition-all hardware-accelerated">
+          <nav className="bg-white/90 backdrop-blur-md border-3 border-slate-950 rounded-full px-2.5 sm:px-6 py-2 sm:py-2.5 shadow-[3px_3px_0px_0px_#020617] sm:shadow-[4px_4px_0px_0px_#020617] ring-1 ring-white/80 flex items-center justify-between gap-1.5 sm:gap-2.5 transition-all hardware-accelerated">
           {/* Brand & Page Badge */}
-          <div className="flex items-center gap-2 sm:gap-3">
+          <div className="flex items-center gap-1.5 sm:gap-3 shrink-0">
             <Link
               href="/"
-              className="flex items-center gap-2 sm:gap-2.5 group focus:outline-none"
+              className="flex items-center gap-1.5 sm:gap-2.5 group focus:outline-none"
               title="Return to Home"
             >
-              <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-[#FF6B8B] border-2 border-slate-950 flex items-center justify-center shadow-[1.5px_1.5px_0px_0px_#020617] group-hover:rotate-12 transition-transform">
+              <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-[#FF6B8B] border-2 border-slate-950 flex items-center justify-center shadow-[1.5px_1.5px_0px_0px_#020617] group-hover:rotate-12 transition-transform shrink-0">
                 <Sword className="w-4 h-4 sm:w-4.5 sm:h-4.5 text-white transform rotate-45" />
               </div>
-              <span className="font-display font-black text-lg sm:text-xl tracking-tight text-slate-950">
+              <span className="font-display font-black text-base sm:text-xl tracking-tight text-slate-950">
                 Life<span className="text-[#FF6B8B]">RPG</span>
               </span>
             </Link>
-            <span className="hidden sm:inline-block bg-[#FEF3C7] text-slate-950 text-[11px] font-black px-2.5 py-0.5 rounded-full border-2 border-slate-950 shadow-[1px_1px_0px_0px_#020617]">
+            <span className="hidden md:inline-block bg-[#FEF3C7] text-slate-950 text-[11px] font-black px-2.5 py-0.5 rounded-full border-2 border-slate-950 shadow-[1px_1px_0px_0px_#020617]">
               Dashboard
             </span>
           </div>
 
           {/* Quick Metrics (Streak, Gold, Profile Dropdown) */}
-          <div className="flex items-center gap-2 sm:gap-3">
+          <div className="flex items-center gap-1.5 sm:gap-3 shrink-0">
             {/* Streak Counter */}
             <motion.button
               type="button"
@@ -480,7 +480,7 @@ export default function DashboardPage() {
                   ? undefined
                   : {
                       y: -2,
-                      boxShadow: "4px 4px 0px 0px #020617",
+                      boxShadow: "3px 3px 0px 0px #020617",
                       transition: SPRING_CONFIGS.tactile,
                     }
               }
@@ -495,7 +495,7 @@ export default function DashboardPage() {
                     }
               }
               onClick={() => setStreakModalOpen(true)}
-              className={`flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-full border-2 border-slate-950 shadow-[2px_2px_0px_0px_#020617] transition-colors cursor-pointer focus:outline-none select-none ${
+              className={`flex items-center gap-1 sm:gap-1.5 px-2 sm:px-3 py-1 sm:py-1.5 rounded-full border-2 border-slate-950 shadow-[1.5px_1.5px_0px_0px_#020617] sm:shadow-[2px_2px_0px_0px_#020617] transition-colors cursor-pointer focus:outline-none select-none ${
                 profile.streak_days > 0
                   ? "bg-[#FFF0E6]/90 backdrop-blur-sm text-[#FF5722] hover:bg-[#ffe5d4]"
                   : "bg-slate-100/90 backdrop-blur-sm text-slate-500 hover:bg-slate-200"
@@ -520,16 +520,16 @@ export default function DashboardPage() {
                   repeat: Infinity,
                   ease: "easeInOut",
                 }}
-                className="flex items-center justify-center"
+                className="flex items-center justify-center shrink-0"
               >
                 <Flame
-                  className={`w-4 h-4 ${
+                  className={`w-3.5 h-3.5 sm:w-4 sm:h-4 ${
                     profile.streak_days > 0 ? "fill-[#FF5722] text-[#FF5722]" : "text-slate-400"
                   }`}
                 />
               </motion.div>
-              <span className="font-display font-black text-xs sm:text-sm">
-                {profile.streak_days}d Streak
+              <span className="font-display font-black text-xs sm:text-sm whitespace-nowrap">
+                {profile.streak_days}d<span className="hidden sm:inline"> Streak</span>
               </span>
             </motion.button>
 
@@ -551,11 +551,11 @@ export default function DashboardPage() {
                   ? undefined
                   : {
                       y: -2,
-                      boxShadow: "4px 4px 0px 0px #020617",
+                      boxShadow: "3px 3px 0px 0px #020617",
                       transition: SPRING_CONFIGS.tactile,
                     }
               }
-              className="flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 bg-[#FFF9DB]/90 backdrop-blur-sm text-[#B45309] rounded-full border-2 border-slate-950 shadow-[2px_2px_0px_0px_#020617] select-none"
+              className="flex items-center gap-1 sm:gap-1.5 px-2 sm:px-3 py-1 sm:py-1.5 bg-[#FFF9DB]/90 backdrop-blur-sm text-[#B45309] rounded-full border-2 border-slate-950 shadow-[1.5px_1.5px_0px_0px_#020617] sm:shadow-[2px_2px_0px_0px_#020617] select-none"
               title="Spend Gold in the Reward Armory"
             >
               <motion.div
@@ -568,16 +568,17 @@ export default function DashboardPage() {
                       }
                 }
                 transition={{ duration: 0.6 }}
+                className="shrink-0"
               >
-                <Coins className="w-4 h-4 text-[#F59E0B]" />
+                <Coins className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-[#F59E0B]" />
               </motion.div>
-              <span className="font-display font-black text-xs sm:text-sm text-slate-950">
-                <AnimatedRollingCounter value={profile.gold} /> Gold
+              <span className="font-display font-black text-xs sm:text-sm text-slate-950 whitespace-nowrap">
+                <AnimatedRollingCounter value={profile.gold} /><span className="hidden sm:inline"> Gold</span>
               </span>
             </motion.div>
 
             {/* User Dropdown Menu */}
-            <div className="relative pl-1 sm:pl-2 border-l-2 border-slate-200" ref={menuRef}>
+            <div className="relative pl-0.5 sm:pl-2 border-l-2 border-slate-200" ref={menuRef}>
               <motion.button
                 type="button"
                 whileHover={
@@ -585,7 +586,7 @@ export default function DashboardPage() {
                     ? undefined
                     : {
                         y: -2,
-                        boxShadow: "4px 4px 0px 0px #020617",
+                        boxShadow: "3px 3px 0px 0px #020617",
                         transition: SPRING_CONFIGS.tactile,
                       }
                 }
@@ -600,7 +601,7 @@ export default function DashboardPage() {
                       }
                 }
                 onClick={() => setUserMenuOpen(!userMenuOpen)}
-                className="flex items-center gap-2 pl-1 sm:pl-1.5 pr-2 sm:pr-2.5 py-1 bg-white/85 backdrop-blur-sm hover:bg-[#FDF8EE] border-2 border-slate-950 rounded-full shadow-[2px_2px_0px_0px_#020617] transition-colors focus:outline-none cursor-pointer"
+                className="flex items-center gap-1 sm:gap-2 p-1 sm:pl-1.5 sm:pr-2.5 sm:py-1 bg-white/85 backdrop-blur-sm hover:bg-[#FDF8EE] border-2 border-slate-950 rounded-full shadow-[1.5px_1.5px_0px_0px_#020617] sm:shadow-[2px_2px_0px_0px_#020617] transition-colors focus:outline-none cursor-pointer"
                 aria-expanded={userMenuOpen}
                 aria-haspopup="true"
                 id="user-dropdown-btn"
@@ -620,7 +621,7 @@ export default function DashboardPage() {
                   </span>
                 </div>
                 <ChevronDown
-                  className={`w-3.5 h-3.5 text-slate-700 transition-transform duration-200 ${
+                  className={`w-3 h-3 sm:w-3.5 sm:h-3.5 text-slate-700 transition-transform duration-200 ${
                     userMenuOpen ? "rotate-180" : ""
                   }`}
                 />
@@ -629,105 +630,102 @@ export default function DashboardPage() {
               {/* Dropdown Card */}
               <AnimatePresence>
                 {userMenuOpen && (
-                  <motion.div
-                    initial={{ opacity: 0, y: 8, scale: 0.96 }}
-                    animate={{ opacity: 1, y: 0, scale: 1 }}
-                    exit={{ opacity: 0, y: 6, scale: 0.96 }}
-                    transition={{ duration: 0.15 }}
-                    style={{ backgroundColor: "#ffffff" }}
-                    className="absolute right-0 mt-3 w-64 bg-white border-3 border-slate-950 rounded-3xl shadow-[6px_6px_0px_0px_#020617] py-2.5 z-50 overflow-hidden isolate"
-                  >
-                    {/* User Header summary inside menu */}
-                    <div className="px-3.5 py-2.5 border-b-2 border-slate-100 bg-[#FDF8EE]">
-                      <div className="font-display font-black text-xs text-slate-950 truncate">
-                        {profile.full_name || profile.username}
+                  <>
+                    {/* Backdrop dismiss for mobile touch */}
+                    <div
+                      className="fixed inset-0 z-40 bg-slate-950/20 backdrop-blur-[2px] sm:hidden"
+                      onClick={() => setUserMenuOpen(false)}
+                    />
+                    <motion.div
+                      initial={{ opacity: 0, y: 8, scale: 0.96 }}
+                      animate={{ opacity: 1, y: 0, scale: 1 }}
+                      exit={{ opacity: 0, y: 6, scale: 0.96 }}
+                      transition={{ duration: 0.15 }}
+                      style={{ backgroundColor: "#ffffff" }}
+                      className="absolute right-0 mt-2.5 w-60 max-w-[calc(100vw-2rem)] bg-white border-3 border-slate-950 rounded-3xl shadow-[5px_5px_0px_0px_#020617] py-2 z-50 overflow-hidden isolate"
+                    >
+                      {/* User Header summary inside menu */}
+                      <div className="px-3.5 py-2.5 border-b-2 border-slate-100 bg-[#FDF8EE]">
+                        <div className="font-display font-black text-xs text-slate-950 truncate">
+                          {profile.full_name || profile.username}
+                        </div>
+                        <div className="text-[11px] font-bold text-slate-500">
+                          @{profile.username} • Level {profile.level}
+                        </div>
                       </div>
-                      <div className="text-[11px] font-bold text-slate-500">
-                        @{profile.username} • Level {profile.level}
-                      </div>
-                    </div>
 
-                    {/* Menu items */}
-                    <div className="p-1.5 space-y-1">
-                      {/* Option 1: My Profile */}
-                      <Link
-                        href="/profile"
-                        onClick={() => setUserMenuOpen(false)}
-                        className="flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-display font-black text-slate-800 hover:bg-[#FFEAEF] hover:text-[#FF6B8B] transition-colors group"
-                      >
-                        <div className="w-7 h-7 rounded-lg bg-[#FFEAEF] group-hover:bg-white border border-slate-950 flex items-center justify-center text-[#FF6B8B] shrink-0 shadow-[1px_1px_0px_0px_#020617]">
-                          <User className="w-3.5 h-3.5" />
-                        </div>
-                        <div className="flex flex-col min-w-0">
-                          <span className="text-slate-950 group-hover:text-[#FF6B8B]">My Profile</span>
-                          <span className="text-[10px] font-bold text-slate-400 group-hover:text-slate-500 truncate">
-                            Edit name, age &amp; origin
-                          </span>
-                        </div>
-                      </Link>
+                      {/* Menu items */}
+                      <div className="p-1.5 space-y-1">
+                        {/* Option 1: My Profile */}
+                        <Link
+                          href="/profile"
+                          onClick={() => setUserMenuOpen(false)}
+                          className="flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-display font-black text-slate-800 hover:bg-[#FFEAEF] hover:text-[#FF6B8B] transition-colors group"
+                        >
+                          <div className="w-7 h-7 rounded-lg bg-[#FFEAEF] group-hover:bg-white border border-slate-950 flex items-center justify-center text-[#FF6B8B] shrink-0 shadow-[1px_1px_0px_0px_#020617]">
+                            <User className="w-3.5 h-3.5" />
+                          </div>
+                          <div className="flex flex-col min-w-0">
+                            <span className="text-slate-950 group-hover:text-[#FF6B8B]">My Profile</span>
+                            <span className="text-[10px] font-bold text-slate-400 group-hover:text-slate-500 truncate">
+                              Edit name, age &amp; origin
+                            </span>
+                          </div>
+                        </Link>
 
-                      {/* Option 2: Community */}
-                      <Link
-                        href="/community"
-                        onClick={() => setUserMenuOpen(false)}
-                        className="flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-display font-black text-slate-800 hover:bg-[#E8FAF5] hover:text-[#059669] transition-colors group"
-                      >
-                        <div className="w-7 h-7 rounded-lg bg-[#E8FAF5] group-hover:bg-white border border-slate-950 flex items-center justify-center text-[#06D6A0] shrink-0 shadow-[1px_1px_0px_0px_#020617]">
-                          <Users className="w-3.5 h-3.5 text-[#059669]" />
-                        </div>
-                        <div className="flex flex-col min-w-0">
-                          <div className="flex items-center gap-1.5">
+                        {/* Option 2: Community */}
+                        <Link
+                          href="/community"
+                          onClick={() => setUserMenuOpen(false)}
+                          className="flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-display font-black text-slate-800 hover:bg-[#E8FAF5] hover:text-[#059669] transition-colors group"
+                        >
+                          <div className="w-7 h-7 rounded-lg bg-[#E8FAF5] group-hover:bg-white border border-slate-950 flex items-center justify-center text-[#06D6A0] shrink-0 shadow-[1px_1px_0px_0px_#020617]">
+                            <Users className="w-3.5 h-3.5 text-[#059669]" />
+                          </div>
+                          <div className="flex flex-col min-w-0">
                             <span className="text-slate-950 group-hover:text-[#059669]">Community</span>
-                            <span className="text-[9px] font-bold bg-[#FFD166] text-slate-950 px-1 py-0.2 rounded border border-slate-950">
-                              Soon
+                            <span className="text-[10px] font-bold text-slate-400 group-hover:text-slate-500 truncate">
+                              Guild halls &amp; leaderboards
                             </span>
                           </div>
-                          <span className="text-[10px] font-bold text-slate-400 group-hover:text-slate-500 truncate">
-                            Guild halls &amp; leaderboards
-                          </span>
-                        </div>
-                      </Link>
+                        </Link>
 
-                      {/* Option 3: General Settings */}
-                      <Link
-                        href="/settings"
-                        onClick={() => setUserMenuOpen(false)}
-                        className="flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-display font-black text-slate-800 hover:bg-[#F0EBFF] hover:text-[#8B5CF6] transition-colors group"
-                      >
-                        <div className="w-7 h-7 rounded-lg bg-[#F0EBFF] group-hover:bg-white border border-slate-950 flex items-center justify-center text-[#8B5CF6] shrink-0 shadow-[1px_1px_0px_0px_#020617]">
-                          <Settings className="w-3.5 h-3.5" />
-                        </div>
-                        <div className="flex flex-col min-w-0">
-                          <div className="flex items-center gap-1.5">
+                        {/* Option 3: General Settings */}
+                        <Link
+                          href="/settings"
+                          onClick={() => setUserMenuOpen(false)}
+                          className="flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-display font-black text-slate-800 hover:bg-[#F0EBFF] hover:text-[#8B5CF6] transition-colors group"
+                        >
+                          <div className="w-7 h-7 rounded-lg bg-[#F0EBFF] group-hover:bg-white border border-slate-950 flex items-center justify-center text-[#8B5CF6] shrink-0 shadow-[1px_1px_0px_0px_#020617]">
+                            <Settings className="w-3.5 h-3.5" />
+                          </div>
+                          <div className="flex flex-col min-w-0">
                             <span className="text-slate-950 group-hover:text-[#8B5CF6]">General Settings</span>
-                            <span className="text-[9px] font-bold bg-[#FFD166] text-slate-950 px-1 py-0.2 rounded border border-slate-950">
-                              Soon
+                            <span className="text-[10px] font-bold text-slate-400 group-hover:text-slate-500 truncate">
+                              Audio FX &amp; app preferences
                             </span>
                           </div>
-                          <span className="text-[10px] font-bold text-slate-400 group-hover:text-slate-500 truncate">
-                            Audio FX &amp; app preferences
-                          </span>
-                        </div>
-                      </Link>
+                        </Link>
 
-                      <div className="border-t border-slate-100 my-1" />
+                        <div className="border-t border-slate-100 my-1" />
 
-                      {/* Sign Out */}
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setUserMenuOpen(false);
-                          signOut();
-                        }}
-                        className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-display font-black text-red-600 hover:bg-red-50 transition-colors"
-                      >
-                        <div className="w-7 h-7 rounded-lg bg-red-50 border border-red-200 flex items-center justify-center text-red-600 shrink-0">
-                          <LogOut className="w-3.5 h-3.5" />
-                        </div>
-                        <span>Sign Out</span>
-                      </button>
-                    </div>
-                  </motion.div>
+                        {/* Sign Out */}
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setUserMenuOpen(false);
+                            signOut();
+                          }}
+                          className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-display font-black text-red-600 hover:bg-red-50 transition-colors"
+                        >
+                          <div className="w-7 h-7 rounded-lg bg-red-50 border border-red-200 flex items-center justify-center text-red-600 shrink-0">
+                            <LogOut className="w-3.5 h-3.5" />
+                          </div>
+                          <span>Sign Out</span>
+                        </button>
+                      </div>
+                    </motion.div>
+                  </>
                 )}
               </AnimatePresence>
             </div>
@@ -737,7 +735,7 @@ export default function DashboardPage() {
       </motion.header>
 
       {/* Main Content Area: Responsive 30% / 70% Two-Column Layout */}
-      <main className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full flex-1 min-h-0 lg:overflow-hidden flex flex-col pt-24 lg:pt-0 pb-6">
+      <main className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full flex-1 min-h-0 lg:overflow-hidden flex flex-col pt-20 sm:pt-24 lg:pt-0 pb-24 sm:pb-6">
         <div className="flex flex-col lg:flex-row gap-6 items-start lg:h-screen">
           {/* ============================================================ */}
           {/* LEFT 30% COLUMN: FIXED (UNAFFECTED BY SCROLLING)             */}
@@ -997,8 +995,8 @@ export default function DashboardPage() {
             {activeTab === "quests" ? (
               <section className="bg-white border-3 border-slate-950 rounded-3xl p-5 sm:p-6 shadow-[5px_5px_0px_0px_#020617] space-y-6">
                 {/* Category Filter + Add Quest Button */}
-                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 pb-4 border-b-2 border-slate-100">
-                  <div className="flex items-center bg-[#FDF8EE] p-1 rounded-2xl border-2 border-slate-950 overflow-x-auto text-xs font-display font-black w-full sm:w-auto gap-1">
+                <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 pb-4 border-b-2 border-slate-100">
+                  <div className="flex items-center bg-[#FDF8EE] p-1 rounded-2xl border-2 border-slate-950 overflow-x-auto no-scrollbar scroll-smooth text-xs font-display font-black w-full sm:w-auto gap-1">
                     {(
                       [
                         { id: "ALL", label: "All" },
@@ -1014,7 +1012,7 @@ export default function DashboardPage() {
                         onClick={() => setSelectedCategory(cat.id)}
                         activeClassName="bg-[#FF6B8B] text-white border-slate-950 shadow-[1px_1px_0px_0px_#020617]"
                         inactiveClassName="text-slate-600 hover:text-slate-950 border-transparent hover:border-slate-300"
-                        className="py-1 px-2.5"
+                        className="py-1 px-2.5 shrink-0 whitespace-nowrap"
                       >
                         {cat.label}
                       </TactileTab>
@@ -1026,9 +1024,9 @@ export default function DashboardPage() {
                       setFormError(null);
                       setModalOpen(true);
                     }}
-                    className="px-4 py-2 bg-[#FFD166] hover:bg-[#fcc849] text-slate-950 font-display font-black text-xs sm:text-sm rounded-2xl border-2 border-slate-950 shadow-[3px_3px_0px_0px_#020617] flex items-center gap-1.5 ml-auto sm:ml-0"
+                    className="w-full sm:w-auto px-4 py-2 bg-[#FFD166] hover:bg-[#fcc849] text-slate-950 font-display font-black text-xs sm:text-sm rounded-2xl border-2 border-slate-950 shadow-[2px_2px_0px_0px_#020617] sm:shadow-[3px_3px_0px_0px_#020617] flex items-center justify-center gap-1.5"
                   >
-                    <Plus className="w-4 h-4" />
+                    <Plus className="w-4 h-4 stroke-[3]" />
                     <span>New Quest</span>
                   </TactileButton>
                 </div>
@@ -1731,6 +1729,83 @@ export default function DashboardPage() {
           </div>
         )}
       </AnimatePresence>
+
+      {/* Mobile Floating Bottom Dock (sm:hidden) */}
+      <motion.nav
+        initial={{ y: 80, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        transition={{ ...SPRING_CONFIGS.tabletopDrop, delay: 0.15 }}
+        className="fixed bottom-3 left-3 right-3 z-40 sm:hidden pointer-events-none"
+        aria-label="Mobile Navigation Dock"
+      >
+        <div className="pointer-events-auto bg-white/95 backdrop-blur-md border-3 border-slate-950 rounded-2xl px-2 py-1.5 shadow-[4px_4px_0px_0px_#020617] flex items-center justify-around gap-1 hardware-accelerated">
+          {/* Quests Tab */}
+          <button
+            type="button"
+            onClick={() => {
+              setActiveTab("quests");
+              window.scrollTo({ top: 380, behavior: "smooth" });
+            }}
+            className={`flex flex-col items-center justify-center py-1 px-2.5 rounded-xl transition-all cursor-pointer ${
+              activeTab === "quests"
+                ? "bg-[#FFEAEF] text-[#FF6B8B] font-black border-2 border-slate-950 shadow-[1px_1px_0px_0px_#020617]"
+                : "text-slate-500 hover:text-slate-800 font-bold border-2 border-transparent"
+            }`}
+          >
+            <Sword className="w-4 h-4" />
+            <span className="text-[10px] font-display mt-0.5">Quests</span>
+          </button>
+
+          {/* Armory Tab */}
+          <button
+            type="button"
+            onClick={() => {
+              setActiveTab("shop");
+              window.scrollTo({ top: 380, behavior: "smooth" });
+            }}
+            className={`flex flex-col items-center justify-center py-1 px-2.5 rounded-xl transition-all cursor-pointer ${
+              activeTab === "shop"
+                ? "bg-[#FFF9DB] text-[#B45309] font-black border-2 border-slate-950 shadow-[1px_1px_0px_0px_#020617]"
+                : "text-slate-500 hover:text-slate-800 font-bold border-2 border-transparent"
+            }`}
+          >
+            <ShoppingBag className="w-4 h-4" />
+            <span className="text-[10px] font-display mt-0.5">Armory</span>
+          </button>
+
+          {/* Quick New Quest Button (Center Prominent) */}
+          <button
+            type="button"
+            onClick={() => {
+              setFormError(null);
+              setModalOpen(true);
+            }}
+            className="flex items-center justify-center w-11 h-11 -mt-4 bg-[#FFD166] text-slate-950 rounded-2xl border-3 border-slate-950 shadow-[2.5px_2.5px_0px_0px_#020617] active:translate-x-[1px] active:translate-y-[1px] active:shadow-[1px_1px_0px_0px_#020617] transition-transform cursor-pointer"
+            title="Create New Quest"
+            aria-label="Create New Quest"
+          >
+            <Plus className="w-6 h-6 stroke-[3]" />
+          </button>
+
+          {/* Guild / Community */}
+          <Link
+            href="/community"
+            className="flex flex-col items-center justify-center py-1 px-2.5 rounded-xl text-slate-500 hover:text-slate-800 font-bold border-2 border-transparent hover:bg-[#E8FAF5] transition-all"
+          >
+            <Users className="w-4 h-4" />
+            <span className="text-[10px] font-display mt-0.5">Guild</span>
+          </Link>
+
+          {/* Profile */}
+          <Link
+            href="/profile"
+            className="flex flex-col items-center justify-center py-1 px-2.5 rounded-xl text-slate-500 hover:text-slate-800 font-bold border-2 border-transparent hover:bg-[#FDF8EE] transition-all"
+          >
+            <User className="w-4 h-4" />
+            <span className="text-[10px] font-display mt-0.5">Profile</span>
+          </Link>
+        </div>
+      </motion.nav>
     </div>
   );
 }
