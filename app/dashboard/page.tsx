@@ -634,7 +634,8 @@ export default function DashboardPage() {
                     animate={{ opacity: 1, y: 0, scale: 1 }}
                     exit={{ opacity: 0, y: 6, scale: 0.96 }}
                     transition={{ duration: 0.15 }}
-                    className="absolute right-0 mt-3 w-64 bg-white border-3 border-slate-950 rounded-3xl shadow-[6px_6px_0px_0px_#020617] py-2.5 z-50 overflow-hidden"
+                    style={{ backgroundColor: "#ffffff" }}
+                    className="absolute right-0 mt-3 w-64 bg-white border-3 border-slate-950 rounded-3xl shadow-[6px_6px_0px_0px_#020617] py-2.5 z-50 overflow-hidden isolate"
                   >
                     {/* User Header summary inside menu */}
                     <div className="px-3.5 py-2.5 border-b-2 border-slate-100 bg-[#FDF8EE]">
