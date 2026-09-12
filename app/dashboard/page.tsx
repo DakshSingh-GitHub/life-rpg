@@ -3,8 +3,18 @@
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
 import confetti from "canvas-confetti";
+import {
+  SPRING_CONFIGS,
+  TactileButton,
+  TactileTab,
+  TactileCheckbox,
+  SpringProgressBar,
+  AnimatedRollingCounter,
+  DopamineBurstOverlay,
+  FloatingBadgeItem,
+} from "@/components/motion/tactile";
 import {
   Sword,
   Shield,
@@ -15,20 +25,13 @@ import {
   Trash2,
   Check,
   LogOut,
-  Dumbbell,
-  Brain,
   Zap,
-  Heart,
-  Trophy,
   ShoppingBag,
   CheckCircle2,
   X,
   AlertCircle,
-  Clock,
   RotateCcw,
-  ChevronRight,
   ChevronDown,
-  Sparkle,
   User,
   Users,
   Settings,
@@ -40,7 +43,6 @@ import {
   ATTRIBUTE_CONFIG,
 } from "@/lib/rpg-engine";
 import {
-  AttributeType,
   CategoryType,
   DifficultyType,
   Quest,
@@ -138,16 +140,48 @@ export default function DashboardPage() {
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const menuRef = React.useRef<HTMLDivElement>(null);
 
-  // Scroll detection for navbar subtle blur and glassmorphism
-  const [isScrolled, setIsScrolled] = useState(false);
+  // Motion and accessibility hooks
+  const shouldReduceMotion = useReducedMotion();
+
+  // Dopamine burst floating rewards state
+  const [floatingRewards, setFloatingRewards] = useState<
+    (FloatingBadgeItem & { questId: string })[]
+  >([]);
+
+  // Quest card punch wobble state
+  const [wobblingQuestId, setWobblingQuestId] = useState<string | null>(null);
+
+  // Floating burst counter ref
+  const burstCounterRef = React.useRef(0);
+
+  // Gold Pill coin-shake animation state
+  const prevGoldRef = React.useRef(profile?.gold ?? 0);
+  const [coinShaking, setCoinShaking] = useState(false);
+
   useEffect(() => {
-    const handleScroll = () => {
-      setIsScrolled(window.scrollY > 15);
-    };
-    window.addEventListener("scroll", handleScroll, { passive: true });
-    handleScroll();
-    return () => window.removeEventListener("scroll", handleScroll);
-  }, []);
+    if (profile && profile.gold > prevGoldRef.current) {
+      setCoinShaking(true);
+      const timer = setTimeout(() => setCoinShaking(false), 800);
+      prevGoldRef.current = profile.gold;
+      return () => clearTimeout(timer);
+    }
+    if (profile) {
+      prevGoldRef.current = profile.gold;
+    }
+  }, [profile]);
+
+  // Confetti trigger on Level Up modal open
+  useEffect(() => {
+    if (levelUpInfo.open) {
+      confetti({
+        particleCount: 100,
+        spread: 80,
+        origin: { y: 0.55 },
+        colors: ["#FF6B8B", "#FFD166", "#06D6A0", "#8B5CF6"],
+      });
+    }
+  }, [levelUpInfo.open]);
+
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -250,14 +284,28 @@ export default function DashboardPage() {
 
   // Handle Quest Toggle
   const handleToggle = async (questId: string) => {
+    const targetQuest = quests.find((q) => q.id === questId);
+    const isCompleting = targetQuest ? !targetQuest.completed : false;
+
+    if (isCompleting && targetQuest) {
+      // Trigger card celebratory punch/wobble
+      setWobblingQuestId(questId);
+      setTimeout(() => setWobblingQuestId(null), 550);
+
+      // Spawn floating dopamine numbers burst
+      burstCounterRef.current += 1;
+      const burstId = `burst-${questId}-${burstCounterRef.current}`;
+      const newBurstItem: FloatingBadgeItem & { questId: string } = {
+        id: burstId,
+        questId,
+        xp: targetQuest.xp_reward,
+        gold: targetQuest.gold_reward,
+      };
+      setFloatingRewards((prev) => [...prev, newBurstItem]);
+    }
+
     const result = await toggleQuestCompletion(questId);
     if (result.leveledUp && result.newLevel) {
-      // Confetti cannon
-      confetti({
-        particleCount: 80,
-        spread: 70,
-        origin: { y: 0.6 },
-      });
       setLevelUpInfo({ open: true, level: result.newLevel });
     }
   };
@@ -265,28 +313,73 @@ export default function DashboardPage() {
   // Helper to render individual quest card with priority and recurring badges
   const renderQuestCard = (quest: Quest, isPriorityContext: boolean = false) => {
     const cfg = ATTRIBUTE_CONFIG[quest.attribute];
+    const isWobbling = wobblingQuestId === quest.id;
+    const activeBursts = floatingRewards.filter((b) => b.questId === quest.id);
+
     return (
       <motion.div
         key={quest.id}
-        layout
-        initial={{ opacity: 0, y: 5 }}
-        animate={{ opacity: 1, y: 0 }}
-        exit={{ opacity: 0, scale: 0.95, transition: { duration: 0.2 } }}
-        className={`p-3.5 sm:p-4 rounded-2xl border-2 transition-all flex items-center justify-between gap-3 shadow-[3px_3px_0px_0px_#020617] hover:border-slate-800 ${
+        layout="position"
+        style={{
+          transform: "translate3d(0, 0, 0)",
+          WebkitBackfaceVisibility: "hidden",
+          backfaceVisibility: "hidden",
+          willChange: "transform, opacity",
+        }}
+        initial={{ opacity: 0, y: 12, scale: 0.96 }}
+        animate={
+          isWobbling
+            ? {
+                opacity: 1,
+                y: 0,
+                scale: [1, 1.025, 0.985, 1],
+                rotate: [0, -1, 1, 0],
+                transition: { duration: 0.45, ease: "easeOut" },
+              }
+            : { opacity: 1, y: 0, scale: 1, rotate: 0 }
+        }
+        exit={{
+          opacity: 0,
+          scale: 0.95,
+          height: 0,
+          marginBottom: 0,
+          paddingTop: 0,
+          paddingBottom: 0,
+          overflow: "hidden",
+          transition: { duration: 0.35, ease: [0.4, 0, 0.2, 1] },
+        }}
+        whileHover={
+          shouldReduceMotion
+            ? undefined
+            : {
+                y: -2,
+                boxShadow: "5px 5px 0px 0px #020617",
+                transition: SPRING_CONFIGS.tactile,
+              }
+        }
+        className={`p-3.5 sm:p-4 rounded-2xl border-2 transition-colors relative flex items-center justify-between gap-3 shadow-[3px_3px_0px_0px_#020617] ${
           isPriorityContext
             ? "bg-white border-slate-950 ring-2 ring-[#FF5722]/30"
             : "bg-white border-slate-950"
         }`}
       >
+        {/* Floating Numbers Dopamine Burst */}
+        {activeBursts.length > 0 && (
+          <DopamineBurstOverlay
+            items={activeBursts}
+            onComplete={(id) => {
+              setFloatingRewards((prev) => prev.filter((item) => item.id !== id));
+            }}
+          />
+        )}
+
         {/* Left: Complete Checkbox + Title */}
         <div className="flex items-center gap-3 min-w-0">
-          <button
+          <TactileCheckbox
+            completed={quest.completed}
             onClick={() => handleToggle(quest.id)}
-            className="w-7 h-7 shrink-0 rounded-xl border-2 flex items-center justify-center transition-all bg-[#FDF8EE] border-slate-950 hover:bg-[#06D6A0] hover:text-slate-950 group cursor-pointer"
-            title="Complete quest"
-          >
-            <Check className="w-4 h-4 stroke-[3] opacity-0 group-hover:opacity-100 transition-opacity" />
-          </button>
+            size="md"
+          />
 
           <div className="min-w-0">
             <div className="flex items-center gap-1.5 flex-wrap mb-1">
@@ -327,13 +420,16 @@ export default function DashboardPage() {
             +{quest.gold_reward} Gold
           </span>
 
-          <button
+          <motion.button
+            type="button"
+            whileHover={{ scale: 1.15, rotate: -6 }}
+            whileTap={{ scale: 0.85 }}
             onClick={() => deleteQuest(quest.id)}
-            className="p-1.5 text-slate-400 hover:text-[#FF6B8B] hover:bg-[#FFEAEF] rounded-lg border border-transparent hover:border-[#FF6B8B] transition-all cursor-pointer"
+            className="p-1.5 text-slate-400 hover:text-[#FF6B8B] hover:bg-[#FFEAEF] rounded-lg border border-transparent hover:border-[#FF6B8B] transition-colors cursor-pointer"
             title="Delete Quest"
           >
             <Trash2 className="w-4 h-4" />
-          </button>
+          </motion.button>
         </div>
       </motion.div>
     );
@@ -347,15 +443,14 @@ export default function DashboardPage() {
       {/* ============================================================ */}
       {/* 1. TOP HEADER & ADVENTURER STATUS BAR: FLOATING PILL NAVBAR  */}
       {/* ============================================================ */}
-      <header className="fixed top-3 sm:top-4 left-0 right-0 z-40 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pointer-events-none">
+      <motion.header
+        initial={{ y: -25, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        transition={{ ...SPRING_CONFIGS.tabletopDrop, delay: 0.05 }}
+        className="fixed top-3 sm:top-4 left-0 right-0 z-40 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pointer-events-none"
+      >
         <div className="relative pointer-events-auto">
-          {/* Glassmorphism precursor: starts 20px (-bottom-5 = 20px) before body content scrolls behind the navbar */}
-          <div
-            aria-hidden="true"
-            className="pointer-events-none absolute -inset-x-2 -top-2 -bottom-5 rounded-full backdrop-blur-[6px] [mask-image:linear-gradient(to_bottom,black_60%,transparent_100%)] -z-10"
-          />
-
-          <nav className="bg-white/70 backdrop-blur-xl border-3 border-slate-950 rounded-full px-3.5 sm:px-6 py-2.5 shadow-[4px_4px_0px_0px_#020617] ring-1 ring-white/80 flex items-center justify-between gap-2.5 transition-all">
+          <nav className="bg-white/85 backdrop-blur-md border-3 border-slate-950 rounded-full px-3.5 sm:px-6 py-2.5 shadow-[4px_4px_0px_0px_#020617] ring-1 ring-white/80 flex items-center justify-between gap-2.5 transition-all hardware-accelerated">
           {/* Brand & Page Badge */}
           <div className="flex items-center gap-2 sm:gap-3">
             <Link
@@ -378,10 +473,29 @@ export default function DashboardPage() {
           {/* Quick Metrics (Streak, Gold, Profile Dropdown) */}
           <div className="flex items-center gap-2 sm:gap-3">
             {/* Streak Counter */}
-            <button
+            <motion.button
               type="button"
+              whileHover={
+                shouldReduceMotion
+                  ? undefined
+                  : {
+                      y: -2,
+                      boxShadow: "4px 4px 0px 0px #020617",
+                      transition: SPRING_CONFIGS.tactile,
+                    }
+              }
+              whileTap={
+                shouldReduceMotion
+                  ? undefined
+                  : {
+                      x: 2,
+                      y: 2,
+                      boxShadow: "1px 1px 0px 0px #020617",
+                      transition: { duration: 0.05 },
+                    }
+              }
               onClick={() => setStreakModalOpen(true)}
-              className={`flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-full border-2 border-slate-950 shadow-[2px_2px_0px_0px_#020617] active:translate-x-[1px] active:translate-y-[1px] transition-all cursor-pointer focus:outline-none select-none ${
+              className={`flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-full border-2 border-slate-950 shadow-[2px_2px_0px_0px_#020617] transition-colors cursor-pointer focus:outline-none select-none ${
                 profile.streak_days > 0
                   ? "bg-[#FFF0E6]/90 backdrop-blur-sm text-[#FF5722] hover:bg-[#ffe5d4]"
                   : "bg-slate-100/90 backdrop-blur-sm text-slate-500 hover:bg-slate-200"
@@ -393,33 +507,100 @@ export default function DashboardPage() {
               }
               id="streak-counter-pill"
             >
-              <Flame
-                className={`w-4 h-4 ${
-                  profile.streak_days > 0 ? "fill-[#FF5722] text-[#FF5722] animate-pulse" : "text-slate-400"
-                }`}
-              />
+              <motion.div
+                animate={
+                  shouldReduceMotion || profile.streak_days === 0
+                    ? undefined
+                    : {
+                        scale: [1, 1.15, 1],
+                      }
+                }
+                transition={{
+                  duration: 2.5,
+                  repeat: Infinity,
+                  ease: "easeInOut",
+                }}
+                className="flex items-center justify-center"
+              >
+                <Flame
+                  className={`w-4 h-4 ${
+                    profile.streak_days > 0 ? "fill-[#FF5722] text-[#FF5722]" : "text-slate-400"
+                  }`}
+                />
+              </motion.div>
               <span className="font-display font-black text-xs sm:text-sm">
                 {profile.streak_days}d Streak
               </span>
-            </button>
+            </motion.button>
 
-            {/* Gold Balance */}
-            <div
-              className="flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 bg-[#FFF9DB]/90 backdrop-blur-sm text-[#B45309] rounded-full border-2 border-slate-950 shadow-[2px_2px_0px_0px_#020617]"
+            {/* Gold Balance with Shake Reaction & Rolling Counter */}
+            <motion.div
+              animate={
+                shouldReduceMotion
+                  ? undefined
+                  : coinShaking
+                  ? {
+                      rotate: [-10, 10, -6, 6, 0],
+                      scale: [1, 1.15, 1],
+                    }
+                  : { rotate: 0, scale: 1 }
+              }
+              transition={{ duration: 0.55, ease: "easeOut" }}
+              whileHover={
+                shouldReduceMotion
+                  ? undefined
+                  : {
+                      y: -2,
+                      boxShadow: "4px 4px 0px 0px #020617",
+                      transition: SPRING_CONFIGS.tactile,
+                    }
+              }
+              className="flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 bg-[#FFF9DB]/90 backdrop-blur-sm text-[#B45309] rounded-full border-2 border-slate-950 shadow-[2px_2px_0px_0px_#020617] select-none"
               title="Spend Gold in the Reward Armory"
             >
-              <Coins className="w-4 h-4 text-[#F59E0B]" />
+              <motion.div
+                animate={
+                  shouldReduceMotion || !coinShaking
+                    ? undefined
+                    : {
+                        rotate: [0, -20, 20, -10, 10, 0],
+                        scale: [1, 1.25, 1],
+                      }
+                }
+                transition={{ duration: 0.6 }}
+              >
+                <Coins className="w-4 h-4 text-[#F59E0B]" />
+              </motion.div>
               <span className="font-display font-black text-xs sm:text-sm text-slate-950">
-                {profile.gold} Gold
+                <AnimatedRollingCounter value={profile.gold} /> Gold
               </span>
-            </div>
+            </motion.div>
 
             {/* User Dropdown Menu */}
             <div className="relative pl-1 sm:pl-2 border-l-2 border-slate-200" ref={menuRef}>
-              <button
+              <motion.button
                 type="button"
+                whileHover={
+                  shouldReduceMotion
+                    ? undefined
+                    : {
+                        y: -2,
+                        boxShadow: "4px 4px 0px 0px #020617",
+                        transition: SPRING_CONFIGS.tactile,
+                      }
+                }
+                whileTap={
+                  shouldReduceMotion
+                    ? undefined
+                    : {
+                        x: 2,
+                        y: 2,
+                        boxShadow: "1px 1px 0px 0px #020617",
+                        transition: { duration: 0.05 },
+                      }
+                }
                 onClick={() => setUserMenuOpen(!userMenuOpen)}
-                className="flex items-center gap-2 pl-1 sm:pl-1.5 pr-2 sm:pr-2.5 py-1 bg-white/85 backdrop-blur-sm hover:bg-[#FDF8EE] border-2 border-slate-950 rounded-full shadow-[2px_2px_0px_0px_#020617] active:translate-x-[1px] active:translate-y-[1px] transition-all focus:outline-none cursor-pointer"
+                className="flex items-center gap-2 pl-1 sm:pl-1.5 pr-2 sm:pr-2.5 py-1 bg-white/85 backdrop-blur-sm hover:bg-[#FDF8EE] border-2 border-slate-950 rounded-full shadow-[2px_2px_0px_0px_#020617] transition-colors focus:outline-none cursor-pointer"
                 aria-expanded={userMenuOpen}
                 aria-haspopup="true"
                 id="user-dropdown-btn"
@@ -443,7 +624,7 @@ export default function DashboardPage() {
                     userMenuOpen ? "rotate-180" : ""
                   }`}
                 />
-              </button>
+              </motion.button>
 
               {/* Dropdown Card */}
               <AnimatePresence>
@@ -453,10 +634,10 @@ export default function DashboardPage() {
                     animate={{ opacity: 1, y: 0, scale: 1 }}
                     exit={{ opacity: 0, y: 6, scale: 0.96 }}
                     transition={{ duration: 0.15 }}
-                    className="absolute right-0 mt-3 w-64 bg-white/90 backdrop-blur-xl border-3 border-slate-950 rounded-3xl shadow-[6px_6px_0px_0px_#020617] py-2.5 z-50 overflow-hidden ring-1 ring-white/60"
+                    className="absolute right-0 mt-3 w-64 bg-white border-3 border-slate-950 rounded-3xl shadow-[6px_6px_0px_0px_#020617] py-2.5 z-50 overflow-hidden"
                   >
                     {/* User Header summary inside menu */}
-                    <div className="px-3.5 py-2.5 border-b-2 border-slate-100 bg-[#FDF8EE]/80">
+                    <div className="px-3.5 py-2.5 border-b-2 border-slate-100 bg-[#FDF8EE]">
                       <div className="font-display font-black text-xs text-slate-950 truncate">
                         {profile.full_name || profile.username}
                       </div>
@@ -552,7 +733,7 @@ export default function DashboardPage() {
           </div>
         </nav>
         </div>
-      </header>
+      </motion.header>
 
       {/* Main Content Area: Responsive 30% / 70% Two-Column Layout */}
       <main className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full flex-1 min-h-0 lg:overflow-hidden flex flex-col pt-24 lg:pt-0 pb-6">
@@ -562,7 +743,12 @@ export default function DashboardPage() {
           {/* ============================================================ */}
           <aside className="w-full lg:w-[32%] xl:w-[30%] shrink-0 space-y-3.5 lg:pt-28 lg:pb-6 lg:h-auto custom-scrollbar-none pr-1.5 pb-2">
             {/* 1. Adventurer Profile, XP & Completion Card */}
-            <div className="bg-white border-3 border-slate-950 rounded-3xl p-4 sm:p-4.5 shadow-[5px_5px_0px_0px_#020617]">
+            <motion.div
+              initial={{ y: 22, opacity: 0, scale: 0.96 }}
+              animate={{ y: 0, opacity: 1, scale: 1 }}
+              transition={{ ...SPRING_CONFIGS.tabletopDrop, delay: 0.15 }}
+              className="bg-white border-3 border-slate-950 rounded-3xl p-4 sm:p-4.5 shadow-[5px_5px_0px_0px_#020617]"
+            >
               {/* User Identity Header */}
               <div className="flex items-center gap-3 pb-3 border-b-2 border-slate-100">
                 <div className="relative shrink-0">
@@ -612,15 +798,13 @@ export default function DashboardPage() {
                       {profile.current_xp} / {nextLevelXp} ({xpPercentage}%)
                     </span>
                   </div>
-                  <div className="w-full h-3.5 bg-[#FDF8EE] rounded-full border-2 border-slate-950 p-0.5 overflow-hidden shadow-inner">
-                    <motion.div
-                      initial={{ width: 0 }}
-                      animate={{ width: `${xpPercentage}%` }}
-                      transition={{ duration: 0.5, ease: "easeOut" }}
-                      style={{ width: `${xpPercentage}%`, backgroundColor: "#10B981" }}
-                      className="h-full rounded-full candy-stripes shadow-[0_0_8px_rgba(16,185,129,0.5)]"
-                    />
-                  </div>
+                  <SpringProgressBar
+                    percent={xpPercentage}
+                    mode="liquid"
+                    barColor="#10B981"
+                    striped={true}
+                    className="h-3.5 bg-[#FDF8EE] rounded-full border-2 border-slate-950 p-0.5 shadow-inner"
+                  />
                   <p className="text-[10px] font-bold text-slate-400 mt-1">
                     {nextLevelXp - profile.current_xp} XP needed for Level {profile.level + 1}
                   </p>
@@ -637,25 +821,27 @@ export default function DashboardPage() {
                       {completedCount} / {totalCount} ({completionPercentage}%)
                     </span>
                   </div>
-                  <div className="w-full h-3 bg-[#FDF8EE] rounded-full border-2 border-slate-950 p-0.5 overflow-hidden">
-                    <motion.div
-                      initial={{ width: 0 }}
-                      animate={{ width: `${completionPercentage}%` }}
-                      transition={{ duration: 0.5, ease: "easeOut" }}
-                      style={{ width: `${completionPercentage}%`, backgroundColor: "#10B981" }}
-                      className="h-full rounded-full bg-[#10B981]"
-                    />
-                  </div>
+                  <SpringProgressBar
+                    percent={completionPercentage}
+                    mode="liquid"
+                    barColor="#10B981"
+                    className="h-3 bg-[#FDF8EE] rounded-full border-2 border-slate-950 p-0.5"
+                  />
                   <div className="flex justify-between items-center text-[10px] font-bold text-slate-400 mt-1">
                     <span>{activeCount} active remaining</span>
                     <span>{completedCount} finished today</span>
                   </div>
                 </div>
               </div>
-            </div>
+            </motion.div>
 
             {/* 2. Skillset Levels Card (Brawn, Intellect, Swiftness, Vitality) */}
-            <div className="bg-white border-3 border-slate-950 rounded-3xl p-3.5 sm:p-4 shadow-[5px_5px_0px_0px_#020617]">
+            <motion.div
+              initial={{ y: 22, opacity: 0, scale: 0.96 }}
+              animate={{ y: 0, opacity: 1, scale: 1 }}
+              transition={{ ...SPRING_CONFIGS.tabletopDrop, delay: 0.25 }}
+              className="bg-white border-3 border-slate-950 rounded-3xl p-3.5 sm:p-4 shadow-[5px_5px_0px_0px_#020617]"
+            >
               <div className="flex items-center justify-between pb-2.5 border-b-2 border-slate-100 mb-2.5">
                 <div className="flex items-center gap-2">
                   <div className="w-5 h-5 rounded-md bg-[#FFD166] border border-slate-950 flex items-center justify-center text-[11px] font-black shadow-[1px_1px_0px_0px_#020617]">
@@ -681,12 +867,12 @@ export default function DashboardPage() {
                   <div className="mt-1.5">
                     <div className="font-display font-black text-xs text-slate-950">Brawn</div>
                     <div className="text-[8px] font-bold text-slate-400 truncate">Fitness &amp; Strength</div>
-                    <div className="w-full h-1.5 bg-white rounded-full border border-slate-950 mt-1 overflow-hidden">
-                      <div
-                        className="h-full bg-[#FF6B8B] rounded-full transition-all duration-500"
-                        style={{ width: `${brawnStat.percent}%` }}
-                      />
-                    </div>
+                    <SpringProgressBar
+                      percent={brawnStat.percent}
+                      mode="overshoot"
+                      barColor="#FF6B8B"
+                      className="h-2 bg-white rounded-full border border-slate-950 mt-1 p-[1px]"
+                    />
                   </div>
                 </div>
 
@@ -701,12 +887,12 @@ export default function DashboardPage() {
                   <div className="mt-1.5">
                     <div className="font-display font-black text-xs text-slate-950">Intellect</div>
                     <div className="text-[8px] font-bold text-slate-400 truncate">Focus &amp; Learning</div>
-                    <div className="w-full h-1.5 bg-white rounded-full border border-slate-950 mt-1 overflow-hidden">
-                      <div
-                        className="h-full bg-[#8B5CF6] rounded-full transition-all duration-500"
-                        style={{ width: `${intellectStat.percent}%` }}
-                      />
-                    </div>
+                    <SpringProgressBar
+                      percent={intellectStat.percent}
+                      mode="overshoot"
+                      barColor="#8B5CF6"
+                      className="h-2 bg-white rounded-full border border-slate-950 mt-1 p-[1px]"
+                    />
                   </div>
                 </div>
 
@@ -721,12 +907,12 @@ export default function DashboardPage() {
                   <div className="mt-1.5">
                     <div className="font-display font-black text-xs text-slate-950">Swiftness</div>
                     <div className="text-[8px] font-bold text-slate-400 truncate">Daily Execution</div>
-                    <div className="w-full h-1.5 bg-white rounded-full border border-slate-950 mt-1 overflow-hidden">
-                      <div
-                        className="h-full bg-[#06D6A0] rounded-full transition-all duration-500"
-                        style={{ width: `${swiftnessStat.percent}%` }}
-                      />
-                    </div>
+                    <SpringProgressBar
+                      percent={swiftnessStat.percent}
+                      mode="overshoot"
+                      barColor="#06D6A0"
+                      className="h-2 bg-white rounded-full border border-slate-950 mt-1 p-[1px]"
+                    />
                   </div>
                 </div>
 
@@ -741,25 +927,31 @@ export default function DashboardPage() {
                   <div className="mt-1.5">
                     <div className="font-display font-black text-xs text-slate-950">Vitality</div>
                     <div className="text-[8px] font-bold text-slate-400 truncate">Mind &amp; Recovery</div>
-                    <div className="w-full h-1.5 bg-white rounded-full border border-slate-950 mt-1 overflow-hidden">
-                      <div
-                        className="h-full bg-[#D97706] rounded-full transition-all duration-500"
-                        style={{ width: `${vitalityStat.percent}%` }}
-                      />
-                    </div>
+                    <SpringProgressBar
+                      percent={vitalityStat.percent}
+                      mode="overshoot"
+                      barColor="#D97706"
+                      className="h-2 bg-white rounded-full border border-slate-950 mt-1 p-[1px]"
+                    />
                   </div>
                 </div>
               </div>
-            </div>
+            </motion.div>
           </aside>
 
           {/* ============================================================ */}
           {/* RIGHT 70% COLUMN: THE ONLY SCROLLABLE SECTION                */}
           {/* ============================================================ */}
           <div
-            className="w-full lg:w-[68%] xl:w-[70%] min-w-0 space-y-5 lg:h-screen lg:overflow-y-auto lg:pt-28 pb-20 custom-scrollbar-none scrollbar-none [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden pr-1"
+            className="w-full lg:w-[68%] xl:w-[70%] min-w-0 lg:h-screen lg:overflow-y-auto lg:pt-28 pb-20 gpu-scroll custom-scrollbar-none scrollbar-none [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden pr-1"
             id="quest-log-scroll-column"
           >
+            <motion.div
+              initial={{ y: 24, opacity: 0, scale: 0.96 }}
+              animate={{ y: 0, opacity: 1, scale: 1 }}
+              transition={{ ...SPRING_CONFIGS.tabletopDrop, delay: 0.35 }}
+              className="space-y-5 hardware-accelerated"
+            >
             {/* Top Navigation & View Switcher Bar */}
             <div className="bg-white border-3 border-slate-950 rounded-3xl p-4 sm:p-5 shadow-[5px_5px_0px_0px_#020617] flex flex-col sm:flex-row sm:items-center justify-between gap-3">
               <div>
@@ -774,29 +966,29 @@ export default function DashboardPage() {
               </div>
 
               {/* Tab Switcher */}
-              <div className="flex items-center bg-[#FDF8EE] p-1.5 rounded-2xl border-2 border-slate-950 self-start sm:self-auto shrink-0">
-                <button
+              <div className="flex items-center bg-[#FDF8EE] p-1.5 rounded-2xl border-2 border-slate-950 self-start sm:self-auto shrink-0 gap-1.5">
+                <TactileTab
+                  active={activeTab === "quests"}
                   onClick={() => setActiveTab("quests")}
-                  className={`px-3.5 py-1.5 font-display font-black text-xs rounded-xl transition-all flex items-center gap-1.5 ${
-                    activeTab === "quests"
-                      ? "bg-[#FF6B8B] text-white border-2 border-slate-950 shadow-[2px_2px_0px_0px_#020617]"
-                      : "text-slate-600 hover:text-slate-950 border-2 border-transparent"
-                  }`}
+                  activeClassName="bg-[#FF6B8B] text-white border-slate-950 shadow-[2px_2px_0px_0px_#020617]"
+                  inactiveClassName="text-slate-600 hover:text-slate-950 border-transparent"
                 >
-                  <Sword className="w-3.5 h-3.5" />
-                  <span>Quests ({activeCount})</span>
-                </button>
-                <button
+                  <div className="flex items-center gap-1.5">
+                    <Sword className="w-3.5 h-3.5" />
+                    <span>Quests ({activeCount})</span>
+                  </div>
+                </TactileTab>
+                <TactileTab
+                  active={activeTab === "shop"}
                   onClick={() => setActiveTab("shop")}
-                  className={`px-3.5 py-1.5 font-display font-black text-xs rounded-xl transition-all flex items-center gap-1.5 ${
-                    activeTab === "shop"
-                      ? "bg-[#FFD166] text-slate-950 border-2 border-slate-950 shadow-[2px_2px_0px_0px_#020617]"
-                      : "text-slate-600 hover:text-slate-950 border-2 border-transparent"
-                  }`}
+                  activeClassName="bg-[#FFD166] text-slate-950 border-slate-950 shadow-[2px_2px_0px_0px_#020617]"
+                  inactiveClassName="text-slate-600 hover:text-slate-950 border-transparent"
                 >
-                  <ShoppingBag className="w-3.5 h-3.5" />
-                  <span>Armory</span>
-                </button>
+                  <div className="flex items-center gap-1.5">
+                    <ShoppingBag className="w-3.5 h-3.5" />
+                    <span>Armory</span>
+                  </div>
+                </TactileTab>
               </div>
             </div>
 
@@ -805,7 +997,7 @@ export default function DashboardPage() {
               <section className="bg-white border-3 border-slate-950 rounded-3xl p-5 sm:p-6 shadow-[5px_5px_0px_0px_#020617] space-y-6">
                 {/* Category Filter + Add Quest Button */}
                 <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 pb-4 border-b-2 border-slate-100">
-                  <div className="flex items-center bg-[#FDF8EE] p-1 rounded-2xl border-2 border-slate-950 overflow-x-auto text-xs font-display font-black w-full sm:w-auto">
+                  <div className="flex items-center bg-[#FDF8EE] p-1 rounded-2xl border-2 border-slate-950 overflow-x-auto text-xs font-display font-black w-full sm:w-auto gap-1">
                     {(
                       [
                         { id: "ALL", label: "All" },
@@ -815,30 +1007,29 @@ export default function DashboardPage() {
                         { id: "wellness", label: "🌿 Vital" },
                       ] as const
                     ).map((cat) => (
-                      <button
+                      <TactileTab
                         key={cat.id}
+                        active={selectedCategory === cat.id}
                         onClick={() => setSelectedCategory(cat.id)}
-                        className={`px-2.5 py-1 rounded-xl transition-all ${
-                          selectedCategory === cat.id
-                            ? "bg-[#FF6B8B] text-white border-2 border-slate-950 shadow-[1px_1px_0px_0px_#020617]"
-                            : "text-slate-600 hover:text-slate-950"
-                        }`}
+                        activeClassName="bg-[#FF6B8B] text-white border-slate-950 shadow-[1px_1px_0px_0px_#020617]"
+                        inactiveClassName="text-slate-600 hover:text-slate-950 border-transparent hover:border-slate-300"
+                        className="py-1 px-2.5"
                       >
                         {cat.label}
-                      </button>
+                      </TactileTab>
                     ))}
                   </div>
 
-                  <button
+                  <TactileButton
                     onClick={() => {
                       setFormError(null);
                       setModalOpen(true);
                     }}
-                    className="px-4 py-2 bg-[#FFD166] hover:bg-[#fcc849] text-slate-950 font-display font-black text-xs sm:text-sm rounded-2xl border-2 border-slate-950 shadow-[3px_3px_0px_0px_#020617] active:translate-x-[1px] active:translate-y-[1px] active:shadow-[1px_1px_0px_0px_#020617] transition-all flex items-center gap-1.5 ml-auto sm:ml-0 cursor-pointer"
+                    className="px-4 py-2 bg-[#FFD166] hover:bg-[#fcc849] text-slate-950 font-display font-black text-xs sm:text-sm rounded-2xl border-2 border-slate-950 shadow-[3px_3px_0px_0px_#020617] flex items-center gap-1.5 ml-auto sm:ml-0"
                   >
                     <Plus className="w-4 h-4" />
                     <span>New Quest</span>
-                  </button>
+                  </TactileButton>
                 </div>
 
                 {/* ============================================================ */}
@@ -1016,22 +1207,34 @@ export default function DashboardPage() {
                             return (
                               <motion.div
                                 key={quest.id}
-                                layout
+                                layout="position"
+                                style={{
+                                  transform: "translate3d(0, 0, 0)",
+                                  WebkitBackfaceVisibility: "hidden",
+                                  backfaceVisibility: "hidden",
+                                  willChange: "transform, opacity",
+                                }}
                                 initial={{ opacity: 0, scale: 0.95 }}
                                 animate={{ opacity: 1, scale: 1 }}
-                                exit={{ opacity: 0, scale: 0.95, transition: { duration: 0.2 } }}
-                                className="p-3 sm:p-3.5 rounded-2xl border-2 border-slate-200 bg-slate-50/90 hover:bg-slate-50 transition-all flex items-center justify-between gap-3"
+                                exit={{
+                                  opacity: 0,
+                                  scale: 0.95,
+                                  height: 0,
+                                  marginBottom: 0,
+                                  paddingTop: 0,
+                                  paddingBottom: 0,
+                                  overflow: "hidden",
+                                  transition: { duration: 0.35, ease: [0.4, 0, 0.2, 1] },
+                                }}
+                                className="p-3 sm:p-3.5 rounded-2xl border-2 border-slate-200 bg-slate-50/90 hover:bg-slate-50 transition-colors flex items-center justify-between gap-3"
                               >
                                 {/* Left: Revert checkbox + Title */}
                                 <div className="flex items-center gap-3 min-w-0">
-                                  <button
+                                  <TactileCheckbox
+                                    completed={true}
                                     onClick={() => handleToggle(quest.id)}
-                                    className="w-6 h-6 shrink-0 rounded-lg bg-[#06D6A0] border-2 border-slate-950 text-slate-950 flex items-center justify-center hover:bg-[#FFEAEF] hover:text-[#FF6B8B] transition-all group cursor-pointer"
-                                    title="Click to reactivate quest"
-                                  >
-                                    <Check className="w-3.5 h-3.5 stroke-[3] group-hover:hidden" />
-                                    <X className="w-3.5 h-3.5 stroke-[3] hidden group-hover:block" />
-                                  </button>
+                                    size="sm"
+                                  />
 
                                   <div className="min-w-0">
                                     <div className="flex items-center gap-2 flex-wrap">
@@ -1073,13 +1276,16 @@ export default function DashboardPage() {
                                     +{quest.gold_reward} Gold
                                   </span>
 
-                                  <button
+                                  <motion.button
+                                    type="button"
+                                    whileHover={{ scale: 1.15, rotate: -6 }}
+                                    whileTap={{ scale: 0.85 }}
                                     onClick={() => deleteQuest(quest.id)}
-                                    className="p-1.5 text-slate-300 hover:text-[#FF6B8B] hover:bg-[#FFEAEF] rounded-lg border border-transparent hover:border-[#FF6B8B] transition-all cursor-pointer"
+                                    className="p-1.5 text-slate-300 hover:text-[#FF6B8B] hover:bg-[#FFEAEF] rounded-lg border border-transparent hover:border-[#FF6B8B] transition-colors cursor-pointer"
                                     title="Delete Quest"
                                   >
                                     <Trash2 className="w-3.5 h-3.5" />
-                                  </button>
+                                  </motion.button>
                                 </div>
                               </motion.div>
                             );
@@ -1107,7 +1313,7 @@ export default function DashboardPage() {
                   <div className="flex items-center gap-1.5 bg-[#FFF9DB] text-[#B45309] px-3 py-1.5 rounded-2xl border-2 border-slate-950 shadow-[2px_2px_0px_0px_#020617]">
                     <Coins className="w-4 h-4" />
                     <span className="font-display font-black text-sm text-slate-950">
-                      {profile.gold} Gold
+                      <AnimatedRollingCounter value={profile.gold} /> Gold
                     </span>
                   </div>
                 </div>
@@ -1144,17 +1350,18 @@ export default function DashboardPage() {
                               <span>Claimed / In Inventory</span>
                             </div>
                           ) : (
-                            <button
+                            <TactileButton
                               onClick={() => purchaseReward(reward)}
                               disabled={!canAfford}
-                              className={`w-full py-2 font-display font-black text-xs rounded-xl border-2 border-slate-950 transition-all ${
+                              shadowSize="sm"
+                              className={`w-full py-2 font-display font-black text-xs rounded-xl border-2 border-slate-950 ${
                                 canAfford
-                                  ? "bg-[#FFD166] hover:bg-[#fcc849] text-slate-950 shadow-[2px_2px_0px_0px_#020617] active:translate-x-[1px] active:translate-y-[1px] cursor-pointer"
+                                  ? "bg-[#FFD166] hover:bg-[#fcc849] text-slate-950"
                                   : "bg-slate-200 text-slate-400 cursor-not-allowed border-slate-300"
                               }`}
                             >
                               {canAfford ? `Unlock for ${reward.cost} Gold` : "Need More Gold"}
-                            </button>
+                            </TactileButton>
                           )}
                         </div>
                       </div>
@@ -1163,6 +1370,7 @@ export default function DashboardPage() {
                 </div>
               </section>
             )}
+            </motion.div>
           </div>
         </div>
       </main>
@@ -1352,20 +1560,22 @@ export default function DashboardPage() {
 
                 {/* Submit */}
                 <div className="pt-2 flex gap-2">
-                  <button
+                  <TactileButton
                     type="button"
                     onClick={() => setModalOpen(false)}
-                    className="w-1/3 py-2.5 bg-white border-2 border-slate-950 font-display font-bold text-xs rounded-2xl shadow-[2px_2px_0px_0px_#020617]"
+                    shadowSize="sm"
+                    className="w-1/3 py-2.5 bg-white border-2 border-slate-950 font-display font-bold text-xs rounded-2xl"
                   >
                     Cancel
-                  </button>
-                  <button
+                  </TactileButton>
+                  <TactileButton
                     type="submit"
                     disabled={creating}
-                    className="w-2/3 py-2.5 bg-[#FF6B8B] hover:bg-[#ff5779] text-white font-display font-black text-sm rounded-2xl border-2 border-slate-950 shadow-[3px_3px_0px_0px_#020617] active:translate-x-[1px] active:translate-y-[1px] transition-all"
+                    shadowSize="md"
+                    className="w-2/3 py-2.5 bg-[#FF6B8B] hover:bg-[#ff5779] text-white font-display font-black text-sm rounded-2xl border-2 border-slate-950"
                   >
                     {creating ? "Forging..." : "Add to Quest Log"}
-                  </button>
+                  </TactileButton>
                 </div>
               </form>
             </motion.div>
@@ -1378,33 +1588,71 @@ export default function DashboardPage() {
       {/* ============================================================ */}
       <AnimatePresence>
         {levelUpInfo.open && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-xs">
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/75 backdrop-blur-xs">
             <motion.div
-              initial={{ scale: 0.8, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.8, opacity: 0 }}
+              initial={{ scale: 0.7, opacity: 0, y: 30 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              exit={{ scale: 0.8, opacity: 0, y: 20 }}
+              transition={SPRING_CONFIGS.tabletopDrop}
               className="bg-white border-4 border-slate-950 rounded-3xl p-6 sm:p-8 max-w-sm w-full shadow-[10px_10px_0px_0px_#020617] text-center relative overflow-hidden"
             >
-              <div className="w-20 h-20 mx-auto rounded-3xl bg-[#FFD166] border-3 border-slate-950 flex items-center justify-center text-4xl shadow-[4px_4px_0px_0px_#020617] mb-4">
+              {/* Chubby Badge Stamp Slamming Down */}
+              <motion.div
+                initial={{ scale: 2.4, opacity: 0, rotate: -15 }}
+                animate={{
+                  scale: [2.4, 0.88, 1.08, 1],
+                  opacity: 1,
+                  rotate: [-15, 5, -2, 0],
+                }}
+                transition={{
+                  duration: 0.75,
+                  times: [0, 0.5, 0.75, 1],
+                  ease: "easeOut",
+                  delay: 0.1,
+                }}
+                className="w-22 h-22 mx-auto rounded-3xl bg-[#FFD166] border-4 border-slate-950 flex items-center justify-center text-5xl shadow-[5px_5px_0px_0px_#020617] mb-4 select-none"
+              >
                 👑
-              </div>
-              <h2 className="font-display font-black text-2xl sm:text-3xl text-slate-950">
+              </motion.div>
+
+              {/* Rubber-band "LEVEL UP!" banner */}
+              <motion.h2
+                initial={{ scale: 0.5, opacity: 0 }}
+                animate={{
+                  scale: [0.5, 1.25, 0.9, 1.06, 1],
+                  opacity: 1,
+                }}
+                transition={{
+                  duration: 0.7,
+                  times: [0, 0.35, 0.6, 0.8, 1],
+                  delay: 0.25,
+                }}
+                className="font-display font-black text-3xl sm:text-4xl text-slate-950 tracking-tight"
+              >
                 LEVEL UP!
-              </h2>
-              <div className="inline-block bg-[#FFEAEF] text-[#FF6B8B] font-display font-black text-sm px-3 py-1 rounded-full border-2 border-[#FF6B8B] my-2">
+              </motion.h2>
+
+              <motion.div
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.4 }}
+                className="inline-block bg-[#FFEAEF] text-[#FF6B8B] font-display font-black text-sm px-3.5 py-1 rounded-full border-2 border-[#FF6B8B] my-2 shadow-[1.5px_1.5px_0px_0px_#FF6B8B]"
+              >
                 Level {levelUpInfo.level} Reached
-              </div>
+              </motion.div>
+
               <p className="text-xs font-bold text-slate-600 mt-2">
                 Your discipline and perseverance have unlocked new heights! Bonus Gold has been
                 added to your pouch.
               </p>
 
-              <button
+              <TactileButton
                 onClick={() => setLevelUpInfo({ open: false, level: 1 })}
-                className="mt-6 w-full py-3 bg-[#FF6B8B] text-white font-display font-black text-sm rounded-2xl border-3 border-slate-950 shadow-[4px_4px_0px_0px_#020617] active:translate-x-[2px] active:translate-y-[2px] transition-all"
+                shadowSize="lg"
+                className="mt-6 w-full py-3 bg-[#FF6B8B] hover:bg-[#ff5779] text-white font-display font-black text-sm rounded-2xl border-3 border-slate-950"
               >
                 Claim Glory &amp; Continue
-              </button>
+              </TactileButton>
             </motion.div>
           </div>
         )}
@@ -1471,13 +1719,13 @@ export default function DashboardPage() {
                 </div>
               </div>
 
-              <button
+              <TactileButton
                 type="button"
                 onClick={() => setStreakModalOpen(false)}
-                className="w-full py-3 bg-[#FFD166] text-slate-950 font-display font-black text-sm rounded-2xl border-3 border-slate-950 shadow-[3px_3px_0px_0px_#020617] active:translate-x-[1px] active:translate-y-[1px] transition-all hover:bg-amber-300"
+                className="w-full py-3 bg-[#FFD166] text-slate-950 font-display font-black text-sm rounded-2xl border-3 border-slate-950 hover:bg-amber-300"
               >
                 Got It, Let&apos;s Quest!
-              </button>
+              </TactileButton>
             </motion.div>
           </div>
         )}
