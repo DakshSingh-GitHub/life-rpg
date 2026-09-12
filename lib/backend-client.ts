@@ -79,9 +79,6 @@ export interface AIGeneratedQuestline {
   quests: AIQuestItem[];
 }
 
-/**
- * Authoritative Quest Completion via FastAPI Game Engine
- */
 export async function completeQuestViaBackend(
   questId: string,
   userId: string

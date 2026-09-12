@@ -133,8 +133,16 @@ export default function LandingPage() {
 
   return (
     <div className="min-h-screen bg-[#FDF8EE] text-slate-900 selection:bg-[#FFD166] selection:text-slate-950 relative overflow-x-hidden font-sans">
+      {/* Skip to Main Content for Accessibility */}
+      <a
+        href="#main-content"
+        className="sr-only focus:not-sr-only focus:fixed focus:top-4 focus:left-4 focus:z-50 focus:px-4 focus:py-2 focus:bg-[#FFD166] focus:text-slate-950 focus:font-black focus:rounded-xl focus:border-3 focus:border-slate-950 focus:shadow-[3px_3px_0px_0px_#020617] focus:outline-none"
+      >
+        Skip to main content
+      </a>
+
       {/* Subtle Comic Dot Texture */}
-      <div className="pointer-events-none fixed inset-0 comic-dots z-0" />
+      <div className="pointer-events-none fixed inset-0 comic-dots z-0" aria-hidden="true" />
 
       {/* ============================================================ */}
       {/* 1. PLAYFUL COMIC NAVBAR WITH LOGIN / SIGNUP BUTTONS          */}
@@ -147,14 +155,18 @@ export default function LandingPage() {
             className="pointer-events-none absolute -inset-x-2 -top-2 -bottom-5 rounded-full backdrop-blur-[6px] [mask-image:linear-gradient(to_bottom,black_60%,transparent_100%)] -z-10"
           />
 
-          <nav className="bg-white/70 backdrop-blur-xl border-3 border-slate-950 rounded-full px-3 sm:px-6 py-2 sm:py-3 shadow-[3px_3px_0px_0px_#020617] sm:shadow-[4px_4px_0px_0px_#020617] ring-1 ring-white/80 flex items-center justify-between transition-all">
+          <nav
+            aria-label="Main Navigation"
+            className="bg-white/70 backdrop-blur-xl border-3 border-slate-950 rounded-full px-3 sm:px-6 py-2 sm:py-3 shadow-[3px_3px_0px_0px_#020617] sm:shadow-[4px_4px_0px_0px_#020617] ring-1 ring-white/80 flex items-center justify-between transition-all"
+          >
           {/* Brand Logo */}
           <Link
             href="/"
+            aria-label="LifeRPG Home"
             className="flex items-center gap-2 group focus:outline-none focus:ring-2 focus:ring-[#FF6B8B] rounded-full p-0.5 sm:p-1"
           >
             <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-[#FF6B8B] border-2 sm:border-3 border-slate-950 flex items-center justify-center shadow-[1.5px_1.5px_0px_0px_#020617] sm:shadow-[2px_2px_0px_0px_#020617] group-hover:rotate-6 transition-transform shrink-0">
-              <Sword className="w-4 h-4 sm:w-5 sm:h-5 text-white stroke-[2.5]" />
+              <Sword className="w-4 h-4 sm:w-5 sm:h-5 text-white stroke-[2.5]" aria-hidden="true" />
             </div>
             <div className="flex flex-col">
               <div className="flex items-center gap-1.5 sm:gap-2">
@@ -196,7 +208,7 @@ export default function LandingPage() {
                 href="/dashboard"
                 className="relative inline-flex items-center justify-center gap-1.5 sm:gap-2 px-3.5 sm:px-5 py-1.5 sm:py-2 bg-[#06D6A0] hover:bg-[#05b88a] text-slate-950 font-display font-black text-xs sm:text-sm rounded-full border-2 sm:border-3 border-slate-950 shadow-[2px_2px_0px_0px_#020617] sm:shadow-[3px_3px_0px_0px_#020617] active:translate-x-[1px] active:translate-y-[1px] active:shadow-[1px_1px_0px_0px_#020617] transition-all cursor-pointer"
               >
-                <Shield className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                <Shield className="w-3.5 h-3.5 sm:w-4 sm:h-4" aria-hidden="true" />
                 <span className="hidden sm:inline">My Dashboard</span>
                 <span className="sm:hidden">Dashboard</span>
               </Link>
@@ -215,7 +227,7 @@ export default function LandingPage() {
                   href="/login?mode=signup"
                   className="relative inline-flex items-center justify-center gap-1 sm:gap-1.5 px-3 sm:px-5 py-1.5 sm:py-2 bg-[#FF6B8B] hover:bg-[#ff5779] text-white font-display font-black text-xs sm:text-sm rounded-full border-2 border-slate-950 shadow-[2px_2px_0px_0px_#020617] sm:shadow-[3px_3px_0px_0px_#020617] active:translate-x-[1px] active:translate-y-[1px] transition-all cursor-pointer"
                 >
-                  <Sparkles className="w-3.5 h-3.5 fill-white shrink-0" />
+                  <Sparkles className="w-3.5 h-3.5 fill-white shrink-0" aria-hidden="true" />
                   <span>Sign Up<span className="hidden sm:inline"> Free</span></span>
                 </Link>
               </>
@@ -225,9 +237,11 @@ export default function LandingPage() {
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
               className="md:hidden p-1.5 sm:p-2 rounded-full bg-[#FEF3C7] border-2 border-slate-950 shadow-[1.5px_1.5px_0px_0px_#020617] sm:shadow-[2px_2px_0px_0px_#020617] active:translate-x-[1px] active:translate-y-[1px] cursor-pointer shrink-0"
-              aria-label="Toggle Navigation Menu"
+              aria-label={mobileMenuOpen ? "Close navigation menu" : "Open navigation menu"}
+              aria-expanded={mobileMenuOpen}
+              aria-controls="mobile-navigation-menu"
             >
-              {mobileMenuOpen ? <X className="w-4 h-4 sm:w-5 sm:h-5" /> : <Menu className="w-4 h-4 sm:w-5 sm:h-5" />}
+              {mobileMenuOpen ? <X className="w-4 h-4 sm:w-5 sm:h-5" aria-hidden="true" /> : <Menu className="w-4 h-4 sm:w-5 sm:h-5" aria-hidden="true" />}
             </button>
           </div>
         </nav>
@@ -236,6 +250,9 @@ export default function LandingPage() {
         <AnimatePresence>
           {mobileMenuOpen && (
             <motion.div
+              id="mobile-navigation-menu"
+              role="region"
+              aria-label="Mobile Navigation Menu"
               initial={{ opacity: 0, y: -15, scale: 0.98 }}
               animate={{ opacity: 1, y: 0, scale: 1 }}
               exit={{ opacity: 0, y: -15, scale: 0.98 }}
@@ -263,7 +280,7 @@ export default function LandingPage() {
                     onClick={() => setMobileMenuOpen(false)}
                     className="w-full py-2.5 bg-[#06D6A0] text-slate-950 font-display font-black text-sm border-2 border-slate-950 rounded-2xl shadow-[2px_2px_0px_0px_#020617] flex items-center justify-center gap-2"
                   >
-                    <Shield className="w-4 h-4" />
+                    <Shield className="w-4 h-4" aria-hidden="true" />
                     <span>My Dashboard</span>
                   </Link>
                 ) : (
@@ -290,6 +307,9 @@ export default function LandingPage() {
         </AnimatePresence>
         </div>
       </header>
+
+      {/* Main Semantic Landmark for Accessibility */}
+      <main id="main-content" tabIndex={-1} className="focus:outline-none">
 
       {/* ============================================================ */}
       {/* 2. HERO SECTION — ADVERTISING VALUE PROPOSITION             */}
@@ -388,25 +408,39 @@ export default function LandingPage() {
                 <div className="text-xs font-display font-black text-slate-500 mb-2">
                   SELECT HABIT DOMAIN TO PREVIEW SPEC:
                 </div>
-                <div className="grid grid-cols-2 gap-2 mb-5">
+                <div
+                  role="tablist"
+                  aria-label="Habit domain categories"
+                  className="grid grid-cols-2 gap-2 mb-5"
+                >
                   {SYSTEM_CATEGORIES.map((category, index) => (
                     <button
                       key={category.id}
+                      role="tab"
+                      id={`tab-${category.id}`}
+                      aria-selected={activeCategoryIndex === index}
+                      aria-controls="category-spec-panel"
+                      tabIndex={activeCategoryIndex === index ? 0 : -1}
                       onClick={() => setActiveCategoryIndex(index)}
-                      className={`p-2.5 rounded-2xl border-2 border-slate-950 font-display font-bold text-xs flex items-center gap-2 transition-all ${
+                      className={`p-2.5 rounded-2xl border-2 border-slate-950 font-display font-bold text-xs flex items-center gap-2 transition-all cursor-pointer ${
                         activeCategoryIndex === index
                           ? `${category.badgeBg} shadow-[3px_3px_0px_0px_#020617] -translate-y-0.5`
                           : "bg-white hover:bg-[#FDF8EE] text-slate-700 shadow-[1px_1px_0px_0px_#020617]"
                       }`}
                     >
-                      <span className="text-base">{category.icon}</span>
+                      <span className="text-base" aria-hidden="true">{category.icon}</span>
                       <span className="truncate">{category.name}</span>
                     </button>
                   ))}
                 </div>
 
                 {/* Selected Category Conversion Specs */}
-                <div className="bg-[#FDF8EE] rounded-2xl border-3 border-slate-950 p-4 mb-4 shadow-[3px_3px_0px_0px_#020617]">
+                <div
+                  id="category-spec-panel"
+                  role="tabpanel"
+                  aria-labelledby={`tab-${activeCategory.id}`}
+                  className="bg-[#FDF8EE] rounded-2xl border-3 border-slate-950 p-4 mb-4 shadow-[3px_3px_0px_0px_#020617]"
+                >
                   <div className="flex items-center justify-between mb-2">
                     <span className="text-xs font-black text-slate-500 uppercase">
                       Target Attribute Allocation
@@ -865,17 +899,23 @@ export default function LandingPage() {
           <div className="space-y-4">
             {FAQS.map((faq, index) => {
               const isOpen = openFaqIndex === index;
+              const buttonId = `faq-trigger-${index}`;
+              const panelId = `faq-panel-${index}`;
               return (
                 <div
                   key={index}
                   className="bg-white rounded-2xl border-3 border-slate-950 overflow-hidden shadow-[4px_4px_0px_0px_#020617] transition-all"
                 >
                   <button
+                    id={buttonId}
+                    aria-expanded={isOpen}
+                    aria-controls={panelId}
                     onClick={() => setOpenFaqIndex(isOpen ? null : index)}
-                    className="w-full text-left p-5 flex items-center justify-between gap-4 font-display font-black text-base sm:text-lg text-slate-950 hover:bg-[#FDF8EE] transition-colors"
+                    className="w-full text-left p-5 flex items-center justify-between gap-4 font-display font-black text-base sm:text-lg text-slate-950 hover:bg-[#FDF8EE] transition-colors cursor-pointer"
                   >
                     <span>{faq.q}</span>
                     <div
+                      aria-hidden="true"
                       className={`w-8 h-8 rounded-xl border-2 border-slate-950 flex items-center justify-center transition-transform ${
                         isOpen ? "bg-[#FFD166] rotate-180" : "bg-[#FDF8EE]"
                       }`}
@@ -887,6 +927,9 @@ export default function LandingPage() {
                   <AnimatePresence>
                     {isOpen && (
                       <motion.div
+                        id={panelId}
+                        role="region"
+                        aria-labelledby={buttonId}
                         initial={{ height: 0, opacity: 0 }}
                         animate={{ height: "auto", opacity: 1 }}
                         exit={{ height: 0, opacity: 0 }}
@@ -928,30 +971,32 @@ export default function LandingPage() {
               <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-6">
                 <button
                   onClick={() => handleOpenAuth("signup")}
-                  className="w-full sm:w-auto px-10 py-5 bg-[#FFD166] hover:bg-[#ffc633] text-slate-950 font-display font-black text-xl rounded-3xl border-4 border-slate-950 shadow-[6px_6px_0px_0px_#020617] active:translate-x-[2px] active:translate-y-[2px] active:shadow-[2px_2px_0px_0px_#020617] transition-all flex items-center justify-center gap-3"
+                  className="w-full sm:w-auto px-10 py-5 bg-[#FFD166] hover:bg-[#ffc633] text-slate-950 font-display font-black text-xl rounded-3xl border-4 border-slate-950 shadow-[6px_6px_0px_0px_#020617] active:translate-x-[2px] active:translate-y-[2px] active:shadow-[2px_2px_0px_0px_#020617] transition-all flex items-center justify-center gap-3 cursor-pointer"
                 >
-                  <Sparkles className="w-6 h-6 fill-slate-950" />
+                  <Sparkles className="w-6 h-6 fill-slate-950" aria-hidden="true" />
                   <span>Create Free Account</span>
                 </button>
               </div>
 
               <div className="flex flex-wrap items-center justify-center gap-4 text-xs sm:text-sm font-extrabold text-white">
                 <span className="flex items-center gap-1.5">
-                  <Check className="w-4 h-4 stroke-[3]" /> No Credit Card Required
+                  <Check className="w-4 h-4 stroke-[3]" aria-hidden="true" /> No Credit Card Required
                 </span>
                 <span>•</span>
                 <span className="flex items-center gap-1.5">
-                  <Check className="w-4 h-4 stroke-[3]" /> Setup Takes Under 60 Seconds
+                  <Check className="w-4 h-4 stroke-[3]" aria-hidden="true" /> Setup Takes Under 60 Seconds
                 </span>
                 <span>•</span>
                 <span className="flex items-center gap-1.5">
-                  <Check className="w-4 h-4 stroke-[3]" /> Cancel Anytime
+                  <Check className="w-4 h-4 stroke-[3]" aria-hidden="true" /> Cancel Anytime
                 </span>
               </div>
             </div>
           </div>
         </div>
       </section>
+
+      </main>
 
       {/* ============================================================ */}
       {/* 8. FOOTER                                                    */}

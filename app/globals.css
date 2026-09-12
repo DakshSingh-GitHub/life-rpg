@@ -6,6 +6,12 @@
     --font-nunito: "Nunito", system-ui, -apple-system, sans-serif;
   }
 
+  html {
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
   body {
     font-family: var(--font-nunito), system-ui, -apple-system, sans-serif;
     font-weight: 600;
@@ -116,5 +122,32 @@
   width: 0px;
   height: 0px;
   background: transparent;
+}
+
+/* High contrast accessible focus indicator for keyboard navigators */
+:focus-visible {
+  outline: 3px solid #8B5CF6 !important;
+  outline-offset: 3px !important;
+}
+
+/* Accessible minimum touch target for mobile interaction (WCAG 2.5.5) */
+.touch-target-min {
+  min-height: 44px;
+  min-width: 44px;
+}
+
+/* Accessibility: respect user preference for reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+  .candy-stripes {
+    animation: none !important;
+  }
 }
 
