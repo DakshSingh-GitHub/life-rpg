@@ -2,11 +2,68 @@ import { createClient } from "./supabase/client";
 import { CommunityPost, CommunityComment } from "./types/community";
 import { UserProfile } from "./types/rpg";
 
-// Service Methods - Pure Supabase (Zero mock data)
+// In-Memory Stale-While-Revalidate Runtime Cache
+interface PostsCacheState {
+  data: CommunityPost[];
+  timestamp: number;
+  currentUserId?: string;
+}
+
+let postsCache: PostsCacheState | null = null;
+const commentsCache = new Map<string, { data: CommunityComment[]; timestamp: number }>();
+
+export function getCachedCommunityPosts(): CommunityPost[] | null {
+  return postsCache ? postsCache.data : null;
+}
+
+export function hasCachedCommunityPosts(): boolean {
+  return postsCache !== null;
+}
+
+export function getCachedPostComments(postId: string): CommunityComment[] | null {
+  return commentsCache.get(postId)?.data || null;
+}
+
+// Deep equality check between two post arrays to avoid redundant state updates / re-renders
+export function arePostsIdentical(prev: CommunityPost[], next: CommunityPost[]): boolean {
+  if (prev === next) return true;
+  if (!prev || !next) return false;
+  if (prev.length !== next.length) return false;
+
+  for (let i = 0; i < prev.length; i++) {
+    const p = prev[i];
+    const n = next[i];
+    if (
+      p.id !== n.id ||
+      p.likes_count !== n.likes_count ||
+      p.comments_count !== n.comments_count ||
+      p.is_liked_by_me !== n.is_liked_by_me ||
+      p.title !== n.title ||
+      p.content !== n.content
+    ) {
+      return false;
+    }
+  }
+  return true;
+}
+
+// Service Methods - Pure Supabase with in-memory caching and background sync
 
 export async function getCommunityPosts(
-  currentUserId?: string
+  currentUserId?: string,
+  options?: { forceRefresh?: boolean }
 ): Promise<CommunityPost[]> {
+  const now = Date.now();
+  // Return cached posts instantly if fresh enough (< 60s) unless forceRefresh is set
+  if (
+    postsCache &&
+    !options?.forceRefresh &&
+    postsCache.currentUserId === currentUserId &&
+    now - postsCache.timestamp < 60000
+  ) {
+    return postsCache.data;
+  }
+
   const supabase = createClient();
   const { data, error } = await supabase
     .from("posts")
@@ -25,7 +82,7 @@ export async function getCommunityPosts(
     if (error) {
       console.error("Supabase getCommunityPosts error:", error);
     }
-    return [];
+    return postsCache ? postsCache.data : [];
   }
 
   let likedPostIds = new Set<string>();
@@ -59,6 +116,13 @@ export async function getCommunityPosts(
       is_liked_by_me: currentUserId ? likedPostIds.has(item.id) : false,
     };
   });
+
+  // Update in-memory cache
+  postsCache = {
+    data: formattedPosts,
+    timestamp: now,
+    currentUserId,
+  };
 
   return formattedPosts;
 }
@@ -111,6 +175,12 @@ export async function createCommunityPost(
     is_liked_by_me: false,
   };
 
+  // Prepend to in-memory cache immediately
+  if (postsCache) {
+    postsCache.data = [newPost, ...postsCache.data.filter((x) => x.id !== newPost.id)];
+    postsCache.timestamp = Date.now();
+  }
+
   return { post: newPost };
 }
 
@@ -118,6 +188,13 @@ export async function deleteCommunityPost(
   postId: string,
   userId: string
 ): Promise<{ error?: string }> {
+  // Update in-memory cache immediately
+  if (postsCache) {
+    postsCache.data = postsCache.data.filter((p) => p.id !== postId);
+    postsCache.timestamp = Date.now();
+  }
+  commentsCache.delete(postId);
+
   const supabase = createClient();
   const { error } = await supabase
     .from("posts")
@@ -136,6 +213,21 @@ export async function togglePostLike(
   postId: string,
   userId: string
 ): Promise<{ liked: boolean; newCount: number; error?: string }> {
+  // Optimistically update in-memory cache
+  if (postsCache) {
+    postsCache.data = postsCache.data.map((p) => {
+      if (p.id === postId) {
+        const nextLiked = !p.is_liked_by_me;
+        return {
+          ...p,
+          is_liked_by_me: nextLiked,
+          likes_count: nextLiked ? p.likes_count + 1 : Math.max(0, p.likes_count - 1),
+        };
+      }
+      return p;
+    });
+  }
+
   const supabase = createClient();
   const { data: existingLike } = await supabase
     .from("post_likes")
@@ -158,10 +250,13 @@ export async function togglePostLike(
       .eq("id", postId)
       .single();
 
-    return {
-      liked: false,
-      newCount: postData?.likes_count ?? 0,
-    };
+    const newCount = postData?.likes_count ?? 0;
+    if (postsCache) {
+      postsCache.data = postsCache.data.map((p) =>
+        p.id === postId ? { ...p, is_liked_by_me: false, likes_count: newCount } : p
+      );
+    }
+    return { liked: false, newCount };
   } else {
     // Like
     await supabase
@@ -174,10 +269,13 @@ export async function togglePostLike(
       .eq("id", postId)
       .single();
 
-    return {
-      liked: true,
-      newCount: postData?.likes_count ?? 1,
-    };
+    const newCount = postData?.likes_count ?? 1;
+    if (postsCache) {
+      postsCache.data = postsCache.data.map((p) =>
+        p.id === postId ? { ...p, is_liked_by_me: true, likes_count: newCount } : p
+      );
+    }
+    return { liked: true, newCount };
   }
 }
 
@@ -202,7 +300,16 @@ export function buildCommentTree(comments: CommunityComment[]): CommunityComment
   return roots;
 }
 
-export async function getPostComments(postId: string): Promise<CommunityComment[]> {
+export async function getPostComments(
+  postId: string,
+  options?: { forceRefresh?: boolean }
+): Promise<CommunityComment[]> {
+  const cached = commentsCache.get(postId);
+  const now = Date.now();
+  if (cached && !options?.forceRefresh && now - cached.timestamp < 60000) {
+    return cached.data;
+  }
+
   const supabase = createClient();
   const { data, error } = await supabase
     .from("comments")
@@ -222,7 +329,7 @@ export async function getPostComments(postId: string): Promise<CommunityComment[
     if (error) {
       console.error("Supabase getPostComments error:", error);
     }
-    return [];
+    return cached ? cached.data : [];
   }
 
   const flatComments: CommunityComment[] = data.map((c: any) => {
@@ -243,7 +350,9 @@ export async function getPostComments(postId: string): Promise<CommunityComment[
     };
   });
 
-  return buildCommentTree(flatComments);
+  const tree = buildCommentTree(flatComments);
+  commentsCache.set(postId, { data: tree, timestamp: now });
+  return tree;
 }
 
 export async function addComment(
@@ -292,14 +401,34 @@ export async function addComment(
     replies: [],
   };
 
+  // Invalidate and update commentsCache & postsCache comments_count
+  commentsCache.delete(params.postId);
+  if (postsCache) {
+    postsCache.data = postsCache.data.map((post) =>
+      post.id === params.postId
+        ? { ...post, comments_count: (post.comments_count || 0) + 1 }
+        : post
+    );
+  }
+
   return { comment: newComment };
 }
 
 export async function deleteComment(
   commentId: string,
   userId: string,
-  _postId: string
+  postId: string
 ): Promise<{ error?: string }> {
+  // Invalidate comment cache for this post
+  commentsCache.delete(postId);
+  if (postsCache) {
+    postsCache.data = postsCache.data.map((post) =>
+      post.id === postId
+        ? { ...post, comments_count: Math.max(0, (post.comments_count || 0) - 1) }
+        : post
+    );
+  }
+
   const supabase = createClient();
   const { error } = await supabase
     .from("comments")

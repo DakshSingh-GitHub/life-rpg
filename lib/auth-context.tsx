@@ -269,11 +269,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       const {
         data: { subscription },
-      } = supabase.auth.onAuthStateChange(async (_event, session) => {
+      } = supabase.auth.onAuthStateChange(async (event, session) => {
         if (session?.user) {
           setSessionCookie();
-          setUser({ id: session.user.id, email: session.user.email });
-          await loadUserData(session.user.id);
+          setUser((prev) => {
+            if (prev && prev.id === session.user.id && prev.email === session.user.email) {
+              return prev; // Keep identical object reference to prevent triggering downstream useEffects
+            }
+            return { id: session.user.id, email: session.user.email };
+          });
+          if (event === "SIGNED_IN" || event === "USER_UPDATED") {
+            await loadUserData(session.user.id);
+          }
         } else {
           clearSessionCookie();
           setUser(null);

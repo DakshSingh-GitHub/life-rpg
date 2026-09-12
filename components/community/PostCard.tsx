@@ -15,7 +15,7 @@ import {
 import { CommunityPost, CommunityComment } from "@/lib/types/community";
 import { MarkdownRenderer } from "./MarkdownRenderer";
 import { CommentThread } from "./CommentThread";
-import { getPostComments, addComment, deleteComment } from "@/lib/community-service";
+import { getPostComments, addComment, deleteComment, getCachedPostComments } from "@/lib/community-service";
 import { UserProfile } from "@/lib/types/rpg";
 
 interface PostCardProps {
@@ -81,7 +81,12 @@ export function PostCard({
     const nextState = !commentsOpen;
     setCommentsOpen(nextState);
     if (nextState) {
-      setLoadingComments(true);
+      const cached = getCachedPostComments(post.id);
+      if (cached) {
+        setComments(cached);
+      } else {
+        setLoadingComments(true);
+      }
       try {
         const data = await getPostComments(post.id);
         setComments(data);

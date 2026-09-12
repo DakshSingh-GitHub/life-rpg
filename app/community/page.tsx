@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo, useCallback } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
@@ -28,6 +28,9 @@ import {
   createCommunityPost,
   deleteCommunityPost,
   togglePostLike,
+  getCachedCommunityPosts,
+  hasCachedCommunityPosts,
+  arePostsIdentical,
 } from "@/lib/community-service";
 import { PostCard } from "@/components/community/PostCard";
 import { CreatePostModal } from "@/components/community/CreatePostModal";
@@ -43,9 +46,9 @@ export default function CommunityPage() {
   const router = useRouter();
   const { user, profile, loading } = useAuth();
 
-  // Feed State
-  const [posts, setPosts] = useState<CommunityPost[]>([]);
-  const [loadingPosts, setLoadingPosts] = useState(true);
+  // Feed State: Initialized immediately from in-memory cache if available
+  const [posts, setPosts] = useState<CommunityPost[]>(() => getCachedCommunityPosts() || []);
+  const [loadingPosts, setLoadingPosts] = useState<boolean>(() => !hasCachedCommunityPosts());
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedTag, setSelectedTag] = useState<string>("ALL");
   const [sortBy, setSortBy] = useState<"latest" | "likes">("latest");
@@ -63,22 +66,45 @@ export default function CommunityPage() {
     }
   }, [user, loading, router]);
 
-  // Load Posts (Strictly real Supabase data only)
-  const loadPosts = async () => {
+  // Load Posts (Fetches fresh data and compares in background; never wipes existing content)
+  const loadPosts = useCallback(async (isBackground = false) => {
     try {
-      setLoadingPosts(true);
+      // Only show full loading state if we have absolutely no posts rendered or cached
+      if (!isBackground && !hasCachedCommunityPosts()) {
+        setLoadingPosts(true);
+      }
       const data = await getCommunityPosts(user?.id);
-      setPosts(data);
+      setPosts((prev) => {
+        // Deep comparison: if posts are identical, keep existing reference (zero re-render)
+        if (arePostsIdentical(prev, data)) {
+          return prev;
+        }
+        return data;
+      });
     } finally {
       setLoadingPosts(false);
     }
-  };
+  }, [user?.id]);
 
   useEffect(() => {
-    if (user) {
-      loadPosts();
-    }
-  }, [user]);
+    if (!user) return;
+    // Initial fetch (background if cache already populated)
+    loadPosts(hasCachedCommunityPosts());
+
+    // When user switches tabs or changes applications and returns, revalidate silently in background!
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === "visible") {
+        loadPosts(true);
+      }
+    };
+
+    window.addEventListener("visibilitychange", handleVisibilityChange);
+    window.addEventListener("focus", handleVisibilityChange);
+    return () => {
+      window.removeEventListener("visibilitychange", handleVisibilityChange);
+      window.removeEventListener("focus", handleVisibilityChange);
+    };
+  }, [user?.id, loadPosts]);
 
   // The active user's posts
   const myPosts = useMemo(() => {
