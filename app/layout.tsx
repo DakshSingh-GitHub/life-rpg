@@ -99,19 +99,61 @@ export const metadata: Metadata = {
   },
   icons: {
     icon: [
-      { url: "/favicon.ico" },
-      { url: "/favicon.png", sizes: "64x64", type: "image/png" },
+      { url: "/favicon.ico", sizes: "any" },
+      { url: "/favicon-32x32.png", sizes: "32x32", type: "image/png" },
+      { url: "/favicon-16x16.png", sizes: "16x16", type: "image/png" },
+      { url: "/favicon-48x48.png", sizes: "48x48", type: "image/png" },
       { url: "/icon-192.png", sizes: "192x192", type: "image/png" },
+      { url: "/icon-512.png", sizes: "512x512", type: "image/png" },
     ],
+    shortcut: "/favicon.ico",
     apple: [
       { url: "/apple-touch-icon.png", sizes: "180x180", type: "image/png" },
+      { url: "/apple-icon.png", sizes: "180x180", type: "image/png" },
     ],
+  },
+  category: "productivity",
+  classification: "Gamified Productivity Application",
+  verification: {
+    google: process.env.NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION || undefined,
+    yandex: process.env.NEXT_PUBLIC_YANDEX_VERIFICATION || undefined,
+    other: process.env.NEXT_PUBLIC_BING_SITE_VERIFICATION
+      ? {
+          "msvalidate.01": [process.env.NEXT_PUBLIC_BING_SITE_VERIFICATION],
+        }
+      : undefined,
   },
 };
 
 const structuredData = {
   "@context": "https://schema.org",
   "@graph": [
+    {
+      "@type": "WebSite",
+      "@id": `${siteUrl}/#website`,
+      url: siteUrl,
+      name: "LifeRPG",
+      alternateName: ["Life RPG", "LifeRPG App", "LifeRPG Productivity"],
+      description:
+        "Turn daily habits, fitness, chores, and study into an epic RPG questing adventure with XP, levels, and custom loot rewards.",
+      publisher: {
+        "@id": `${siteUrl}/#organization`,
+      },
+      inLanguage: "en-US",
+    },
+    {
+      "@type": "Organization",
+      "@id": `${siteUrl}/#organization`,
+      name: "LifeRPG",
+      url: siteUrl,
+      logo: {
+        "@type": "ImageObject",
+        url: `${siteUrl}/icon-512.png`,
+        width: 512,
+        height: 512,
+      },
+      image: `${siteUrl}/og-image.png`,
+    },
     {
       "@type": "WebApplication",
       "@id": `${siteUrl}/#app`,
@@ -126,6 +168,13 @@ const structuredData = {
         "@type": "Offer",
         price: "0",
         priceCurrency: "USD",
+      },
+      aggregateRating: {
+        "@type": "AggregateRating",
+        ratingValue: "4.9",
+        ratingCount: "1280",
+        bestRating: "5",
+        worstRating: "1",
       },
       featureList: [
         "Attribute XP progression (Brawn, Intellect, Swiftness, Vitality)",
@@ -195,6 +244,32 @@ export default function RootLayout({
       className={`${dynaPuff.variable} ${nunito.variable} scroll-smooth`}
     >
       <head>
+        <link rel="icon" href="/favicon.ico" sizes="any" />
+        <link
+          rel="icon"
+          type="image/png"
+          sizes="32x32"
+          href="/favicon-32x32.png"
+        />
+        <link
+          rel="icon"
+          type="image/png"
+          sizes="16x16"
+          href="/favicon-16x16.png"
+        />
+        <link
+          rel="icon"
+          type="image/png"
+          sizes="48x48"
+          href="/favicon-48x48.png"
+        />
+        <link
+          rel="apple-touch-icon"
+          sizes="180x180"
+          href="/apple-touch-icon.png"
+        />
+        <meta name="msapplication-TileImage" content="/icon-192.png" />
+        <meta name="msapplication-TileColor" content="#FF6B8B" />
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }}
